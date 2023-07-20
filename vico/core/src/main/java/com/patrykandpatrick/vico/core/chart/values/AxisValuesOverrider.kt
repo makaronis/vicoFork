@@ -16,6 +16,8 @@
 
 package com.patrykandpatrick.vico.core.chart.values
 
+import com.patrykandpatrick.vico.core.candlestickentry.CandlestickEntryModel
+import com.patrykandpatrick.vico.core.entry.ChartEntry
 import com.patrykandpatrick.vico.core.entry.ChartEntryModel
 import com.patrykandpatrick.vico.core.extension.round
 import kotlin.math.abs
@@ -91,35 +93,37 @@ public interface AxisValuesOverrider<Model> {
                 require(yFraction > 0f)
             }
 
-            override fun getMinY(model: ChartEntryModel,firstInx: Int, lastInx: Int): Float {
+            override fun getMinY(model: ChartEntryModel, firstInx: Int, lastInx: Int): Float {
                 val difference = abs(getMaxY(model) - model.maxY)
                 return (model.minY - difference).maybeRound().coerceAtLeast(0f)
             }
 
-            override fun getMaxY(model: ChartEntryModel,firstInx: Int, lastInx: Int): Float = (model.maxY * yFraction).maybeRound()
+            override fun getMaxY(model: ChartEntryModel, firstInx: Int, lastInx: Int): Float =
+                (model.maxY * yFraction).maybeRound()
 
             private fun Float.maybeRound() = if (round) this.round else this
         }
 
-        public fun autoYScale(): AxisValuesOverrider<ChartEntryModel> = object : AxisValuesOverrider<ChartEntryModel> {
+        public fun autoYScale(): AxisValuesOverrider<CandlestickEntryModel> =
+            object : AxisValuesOverrider<CandlestickEntryModel> {
 
-            override fun getMinY(model: ChartEntryModel, firstInx: Int, lastInx: Int): Float? {
-                return try {
-                    val visibleData = model.entries.map { it.subList(firstInx, lastInx) }.flatten()
-                    visibleData.minOf { it.y }
-                } catch (e: Exception) {
-                    super.getMinY(model, firstInx, lastInx)
+                override fun getMinY(model: CandlestickEntryModel, firstInx: Int, lastInx: Int): Float? {
+                    return try {
+                        val visibleData = model.entries.subList(firstInx, lastInx)
+                        visibleData.minOf { it.low }
+                    } catch (e: Exception) {
+                        super.getMinY(model, firstInx, lastInx)
+                    }
+                }
+
+                override fun getMaxY(model: CandlestickEntryModel, firstInx: Int, lastInx: Int): Float? {
+                    return try {
+                        val visibleData = model.entries.subList(firstInx, lastInx)
+                        visibleData.maxOf { it.high }
+                    } catch (e: Exception) {
+                        super.getMaxY(model, firstInx, lastInx)
+                    }
                 }
             }
-
-            override fun getMaxY(model: ChartEntryModel, firstInx: Int, lastInx: Int): Float? {
-                return try {
-                    val visibleData = model.entries.map { it.subList(firstInx, lastInx) }.flatten()
-                    visibleData.maxOf { it.y }
-                } catch (e: Exception) {
-                    super.getMaxY(model, firstInx, lastInx)
-                }
-            }
-        }
     }
 }

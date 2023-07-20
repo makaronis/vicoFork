@@ -87,7 +87,7 @@ public open class CandlestickChart(
         horizontalScroll: Float,
         maxScroll: Float,
     ): Pair<Int, Int> {
-        val oneSegmentWidth = segmentProperties.cellWidth
+        val oneSegmentWidth = segmentProperties.segmentWidth
         val viewportWidth = bounds.width()
         val scrollPercent = (horizontalScroll / (maxScroll / 100.0f)).roundToInt() / 100.0f
 

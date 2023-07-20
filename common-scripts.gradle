@@ -66,7 +66,7 @@ void customizePom(MavenPom pom) {
 
     pom.name = "Vico"
     pom.description = "A light and extensible chart library for Android."
-    pom.url = "https://github.com/patrykandpatrick/vico"
+    pom.url = "https://github.com/makaronis/vicoFork"
 
     pom.licenses {
 
@@ -77,9 +77,9 @@ void customizePom(MavenPom pom) {
     }
 
     pom.scm {
-        connection = "scm:git:git://github.com/patrykandpatrick/vico.git"
-        developerConnection = "scm:git:ssh://github.com/patrykandpatrick/vico.git"
-        url = "https://github.com/patrykandpatrick/vico"
+        connection = "scm:git:git://github.com/makaronis/vicoFork.git"
+        developerConnection = "scm:git:git://github.com/makaronis/vicoFork.git"
+        url = "https://github.com/makaronis/vicoFork"
     }
 
     pom.developers {
