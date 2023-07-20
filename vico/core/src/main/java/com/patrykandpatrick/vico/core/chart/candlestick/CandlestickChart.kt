@@ -26,6 +26,7 @@ import com.patrykandpatrick.vico.core.candlestickentry.CandlestickEntryType
 import com.patrykandpatrick.vico.core.chart.BaseChart
 import com.patrykandpatrick.vico.core.chart.composed.ComposedChart
 import com.patrykandpatrick.vico.core.chart.draw.ChartDrawContext
+import com.patrykandpatrick.vico.core.chart.draw.getMaxScrollDistance
 import com.patrykandpatrick.vico.core.chart.forEachIn
 import com.patrykandpatrick.vico.core.chart.put
 import com.patrykandpatrick.vico.core.chart.segment.MutableSegmentProperties
@@ -40,6 +41,7 @@ import com.patrykandpatrick.vico.core.extension.getStart
 import com.patrykandpatrick.vico.core.extension.half
 import com.patrykandpatrick.vico.core.extension.round
 import com.patrykandpatrick.vico.core.marker.Marker
+import kotlin.math.roundToInt
 
 /**
  * [CandlestickChart] displays data as vertical bars. It can draw multiple columns per segment.
@@ -80,6 +82,25 @@ public open class CandlestickChart(
 
     override val entryLocationMap: HashMap<Float, MutableList<Marker.EntryModel>> = HashMap()
 
+    private fun getFirstAndLastVisibleIndex(
+        itemsCount: Int,
+        horizontalScroll: Float,
+        maxScroll: Float,
+    ): Pair<Int, Int> {
+        val oneSegmentWidth = segmentProperties.cellWidth
+        val viewportWidth = bounds.width()
+        val scrollPercent = (horizontalScroll / (maxScroll / 100.0f)).roundToInt() / 100.0f
+
+        val visibleItems: Int = (viewportWidth / oneSegmentWidth).roundToInt()
+        val firstVisibleIndex = ((scrollPercent * (itemsCount - visibleItems)).toInt()).coerceIn(0, itemsCount - 1)
+        val lastVisibleIndex = (firstVisibleIndex + visibleItems).coerceIn(0, itemsCount - 1)
+        return firstVisibleIndex to lastVisibleIndex
+    }
+
+    private var firstVisibleInx: Int = -1
+    private var lastVisibleInx: Int = -1
+
+
     override fun drawChart(
         context: ChartDrawContext,
         model: CandlestickEntryModel,
@@ -100,6 +121,13 @@ public open class CandlestickChart(
         cellWidth: Float,
         spacing: Float,
     ) {
+        val (firstInx, lastInx) = getFirstAndLastVisibleIndex(
+            model.entries.size,
+            horizontalScroll,
+            getMaxScrollDistance(),
+        )
+        firstVisibleInx = firstInx
+        lastVisibleInx = lastInx
 
         val yRange = (chartValues.maxY - chartValues.minY).takeIf { it != 0f } ?: return
         val heightMultiplier = bounds.height() / yRange
@@ -189,10 +217,10 @@ public open class CandlestickChart(
 
     override fun updateChartValues(chartValuesManager: ChartValuesManager, model: CandlestickEntryModel) {
         chartValuesManager.tryUpdate(
-            minX = axisValuesOverrider?.getMinX(model) ?: model.minX,
-            maxX = axisValuesOverrider?.getMaxX(model) ?: model.maxX,
-            minY = axisValuesOverrider?.getMinY(model) ?: model.minY,
-            maxY = axisValuesOverrider?.getMaxY(model) ?: model.maxY,
+            minX = axisValuesOverrider?.getMinX(model, firstVisibleInx, lastVisibleInx) ?: model.minX,
+            maxX = axisValuesOverrider?.getMaxX(model, firstVisibleInx, lastVisibleInx) ?: model.maxX,
+            minY = axisValuesOverrider?.getMinY(model, firstVisibleInx, lastVisibleInx) ?: model.minY,
+            maxY = axisValuesOverrider?.getMaxY(model, firstVisibleInx, lastVisibleInx) ?: model.maxY,
             model = model,
             axisPosition = targetVerticalAxisPosition,
         )
