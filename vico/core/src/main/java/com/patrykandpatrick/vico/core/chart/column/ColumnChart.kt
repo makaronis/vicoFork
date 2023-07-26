@@ -338,7 +338,7 @@ public open class ColumnChart(
         val columnCollectionWidth = getColumnCollectionWidth(model.entries.size)
         horizontalDimensions.apply {
             xSpacing = columnCollectionWidth + spacingDp.pixels
-            when (horizontalLayout) {
+            when (val horizontalLayout = horizontalLayout) {
                 is HorizontalLayout.Segmented -> {
                     scalableStartPadding = xSpacing.half
                     scalableEndPadding = scalableStartPadding
@@ -375,7 +375,7 @@ public open class ColumnChart(
 
     protected open fun MeasureContext.getCumulatedThickness(count: Int): Float {
         var thickness = 0f
-        for (i in 0 until count) {
+        for (i in 0..<count) {
             thickness += columns.getRepeating(i).thicknessDp * density
         }
         return thickness
