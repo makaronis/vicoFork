@@ -55,6 +55,7 @@ import com.patrykandpatrick.vico.core.extension.rangeWith
 import com.patrykandpatrick.vico.core.formatter.DecimalFormatValueFormatter
 import com.patrykandpatrick.vico.core.formatter.ValueFormatter
 import com.patrykandpatrick.vico.core.marker.Marker
+import java.lang.Exception
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -284,14 +285,18 @@ public open class LineChart(
         horizontalScroll: Float,
         maxScroll: Float,
     ): Pair<Int, Int> {
-        val oneSegmentWidth = horizontalDimensions.xSpacing
-        val viewportWidth = bounds.width()
-        val scrollPercent = (horizontalScroll / (maxScroll / 100.0f)).roundToInt() / 100.0f
+        return try {
+            val oneSegmentWidth = horizontalDimensions.xSpacing
+            val viewportWidth = bounds.width()
+            val scrollPercent = (horizontalScroll / (maxScroll / 100.0f)).roundToInt() / 100.0f
 
-        val visibleItems: Int = (viewportWidth / oneSegmentWidth).roundToInt()
-        val firstVisibleIndex = ((scrollPercent * (itemsCount - visibleItems)).toInt()).coerceIn(0, itemsCount - 1)
-        val lastVisibleIndex = (firstVisibleIndex + visibleItems).coerceIn(0, itemsCount - 1)
-        return firstVisibleIndex to lastVisibleIndex
+            val visibleItems: Int = (viewportWidth / oneSegmentWidth).roundToInt()
+            val firstVisibleIndex = ((scrollPercent * (itemsCount - visibleItems)).toInt()).coerceIn(0, itemsCount - 1)
+            val lastVisibleIndex = (firstVisibleIndex + visibleItems).coerceIn(0, itemsCount - 1)
+            firstVisibleIndex to lastVisibleIndex
+        } catch (e: Exception) {
+            0 to 0
+        }
     }
 
     private var firstVisibleInx: Int = -1
@@ -576,10 +581,10 @@ public open class LineChart(
     override fun updateChartValues(chartValuesManager: ChartValuesManager, model: ChartEntryModel, xStep: Float?) {
         @Suppress("DEPRECATION_ERROR")
         chartValuesManager.tryUpdate(
-            minX = axisValuesOverrider?.getMinX(model,firstVisibleInx,lastVisibleInx) ?: minX ?: model.minX,
-            maxX = axisValuesOverrider?.getMaxX(model,firstVisibleInx,lastVisibleInx) ?: maxX ?: model.maxX,
-            minY = axisValuesOverrider?.getMinY(model,firstVisibleInx,lastVisibleInx) ?: minY ?: min(model.minY, 0f),
-            maxY = axisValuesOverrider?.getMaxY(model,firstVisibleInx,lastVisibleInx) ?: maxY ?: model.maxY,
+            minX = axisValuesOverrider?.getMinX(model, firstVisibleInx, lastVisibleInx) ?: minX ?: model.minX,
+            maxX = axisValuesOverrider?.getMaxX(model, firstVisibleInx, lastVisibleInx) ?: maxX ?: model.maxX,
+            minY = axisValuesOverrider?.getMinY(model, firstVisibleInx, lastVisibleInx) ?: minY ?: min(model.minY, 0f),
+            maxY = axisValuesOverrider?.getMaxY(model, firstVisibleInx, lastVisibleInx) ?: maxY ?: model.maxY,
             xStep = xStep ?: model.xGcd,
             chartEntryModel = model,
             axisPosition = targetVerticalAxisPosition,
