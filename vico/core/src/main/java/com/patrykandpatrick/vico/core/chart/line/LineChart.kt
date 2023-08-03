@@ -29,6 +29,7 @@ import com.patrykandpatrick.vico.core.chart.composed.ComposedChart
 import com.patrykandpatrick.vico.core.chart.dimensions.HorizontalDimensions
 import com.patrykandpatrick.vico.core.chart.dimensions.MutableHorizontalDimensions
 import com.patrykandpatrick.vico.core.chart.draw.ChartDrawContext
+import com.patrykandpatrick.vico.core.chart.draw.getMaxScrollDistance
 import com.patrykandpatrick.vico.core.chart.forEachInRelativelyIndexed
 import com.patrykandpatrick.vico.core.chart.insets.Insets
 import com.patrykandpatrick.vico.core.chart.layout.HorizontalLayout
@@ -56,6 +57,7 @@ import com.patrykandpatrick.vico.core.formatter.ValueFormatter
 import com.patrykandpatrick.vico.core.marker.Marker
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 /**
  * [LineChart] displays data as a continuous line.
@@ -277,11 +279,36 @@ public open class LineChart(
 
     override val entryLocationMap: HashMap<Float, MutableList<Marker.EntryModel>> = HashMap()
 
+    private fun getFirstAndLastVisibleIndex(
+        itemsCount: Int,
+        horizontalScroll: Float,
+        maxScroll: Float,
+    ): Pair<Int, Int> {
+        val oneSegmentWidth = horizontalDimensions.xSpacing
+        val viewportWidth = bounds.width()
+        val scrollPercent = (horizontalScroll / (maxScroll / 100.0f)).roundToInt() / 100.0f
+
+        val visibleItems: Int = (viewportWidth / oneSegmentWidth).roundToInt()
+        val firstVisibleIndex = ((scrollPercent * (itemsCount - visibleItems)).toInt()).coerceIn(0, itemsCount - 1)
+        val lastVisibleIndex = (firstVisibleIndex + visibleItems).coerceIn(0, itemsCount - 1)
+        return firstVisibleIndex to lastVisibleIndex
+    }
+
+    private var firstVisibleInx: Int = -1
+    private var lastVisibleInx: Int = -1
+
     override fun drawChart(
         context: ChartDrawContext,
         model: ChartEntryModel,
     ): Unit = with(context) {
         resetTempData()
+        val (firstInx, lastInx) = getFirstAndLastVisibleIndex(
+            model.entries.size,
+            horizontalScroll,
+            getMaxScrollDistance(),
+        )
+        firstVisibleInx = firstInx
+        lastVisibleInx = lastInx
 
         model.entries.forEachIndexed { entryListIndex, entries ->
 
@@ -549,10 +576,10 @@ public open class LineChart(
     override fun updateChartValues(chartValuesManager: ChartValuesManager, model: ChartEntryModel, xStep: Float?) {
         @Suppress("DEPRECATION_ERROR")
         chartValuesManager.tryUpdate(
-            minX = axisValuesOverrider?.getMinX(model) ?: minX ?: model.minX,
-            maxX = axisValuesOverrider?.getMaxX(model) ?: maxX ?: model.maxX,
-            minY = axisValuesOverrider?.getMinY(model) ?: minY ?: min(model.minY, 0f),
-            maxY = axisValuesOverrider?.getMaxY(model) ?: maxY ?: model.maxY,
+            minX = axisValuesOverrider?.getMinX(model,firstVisibleInx,lastVisibleInx) ?: minX ?: model.minX,
+            maxX = axisValuesOverrider?.getMaxX(model,firstVisibleInx,lastVisibleInx) ?: maxX ?: model.maxX,
+            minY = axisValuesOverrider?.getMinY(model,firstVisibleInx,lastVisibleInx) ?: minY ?: min(model.minY, 0f),
+            maxY = axisValuesOverrider?.getMaxY(model,firstVisibleInx,lastVisibleInx) ?: maxY ?: model.maxY,
             xStep = xStep ?: model.xGcd,
             chartEntryModel = model,
             axisPosition = targetVerticalAxisPosition,
