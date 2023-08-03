@@ -303,7 +303,7 @@ public open class LineChart(
     ): Unit = with(context) {
         resetTempData()
         val (firstInx, lastInx) = getFirstAndLastVisibleIndex(
-            model.entries.size,
+            model.entries.firstOrNull()?.size ?: 0,
             horizontalScroll,
             getMaxScrollDistance(),
         )
