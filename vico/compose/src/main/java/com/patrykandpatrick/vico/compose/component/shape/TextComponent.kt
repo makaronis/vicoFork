@@ -35,7 +35,7 @@ import com.patrykandpatrick.vico.core.dimensions.emptyDimensions
  *
  * @param color the text color.
  * @param textSize the text size.
- * @param background an optional [ShapeComponent] to display behind the text.
+ * @param background an optional [ShapeComponent] to be displayed behind the text.
  * @param ellipsize the text truncation behavior.
  * @param lineCount the line count.
  * @param padding the padding between the text and the background.
@@ -58,14 +58,16 @@ public fun textComponent(
     margins: MutableDimensions = emptyDimensions(),
     typeface: Typeface? = null,
     textAlign: Paint.Align = Paint.Align.LEFT,
-): TextComponent = com.patrykandpatrick.vico.compose.component.textComponent(
-    color = color,
-    textSize = textSize,
-    background = background,
-    ellipsize = ellipsize,
-    lineCount = lineCount,
-    padding = padding,
-    margins = margins,
-    typeface = typeface,
-    textAlign = textAlign,
-)
+): TextComponent =
+    @Suppress("DEPRECATION")
+    com.patrykandpatrick.vico.compose.component.textComponent(
+        color = color,
+        textSize = textSize,
+        background = background,
+        ellipsize = ellipsize,
+        lineCount = lineCount,
+        padding = padding,
+        margins = margins,
+        typeface = typeface,
+        textAlign = textAlign,
+    )

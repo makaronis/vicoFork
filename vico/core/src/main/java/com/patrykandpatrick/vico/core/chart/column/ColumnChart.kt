@@ -144,8 +144,9 @@ public open class ColumnChart(
                 height = abs(entry.y) * heightMultiplier
                 val xSpacingMultiplier = (entry.x - chartValues.minX) / chartValues.xStep
                 check(xSpacingMultiplier % 1f == 0f) { "Each entry’s x value must be a multiple of the x step." }
-                columnCenterX = drawingStart + layoutDirectionMultiplier * horizontalDimensions.xSpacing *
-                    xSpacingMultiplier + column.thicknessDp.half.pixels * chartScale
+                columnCenterX = drawingStart +
+                    (horizontalDimensions.xSpacing * xSpacingMultiplier + column.thicknessDp.half.pixels * chartScale) *
+                    layoutDirectionMultiplier
 
                 when (mergeMode) {
                     MergeMode.Stack -> {
@@ -335,7 +336,7 @@ public open class ColumnChart(
         context: MeasureContext,
         model: ChartEntryModel,
     ): HorizontalDimensions = with(context) {
-        val columnCollectionWidth = getColumnCollectionWidth(model.entries.size)
+        val columnCollectionWidth = getColumnCollectionWidth(if (model.entries.isNotEmpty()) model.entries.size else 1)
         horizontalDimensions.apply {
             xSpacing = columnCollectionWidth + spacingDp.pixels
             when (val horizontalLayout = horizontalLayout) {
@@ -355,7 +356,7 @@ public open class ColumnChart(
         entryCollectionSize: Int,
     ): Float = when (mergeMode) {
         MergeMode.Stack ->
-            columns.maxOf { it.thicknessDp.pixels }
+            columns.take(entryCollectionSize).maxOf { it.thicknessDp.pixels }
 
         MergeMode.Grouped ->
             getCumulatedThickness(entryCollectionSize) + innerSpacingDp.pixels * (entryCollectionSize - 1)
@@ -368,9 +369,10 @@ public open class ColumnChart(
 
             MergeMode.Stack -> 0f
         }
-        return bounds.getStart(isLtr) + horizontalDimensions.scaled(chartScale).startPadding +
-            (mergeModeComponent - getColumnCollectionWidth(entryCollectionCount).half) * chartScale *
-            layoutDirectionMultiplier
+        return bounds.getStart(isLtr) + (
+            horizontalDimensions.scaled(chartScale).startPadding +
+                (mergeModeComponent - getColumnCollectionWidth(entryCollectionCount).half) * chartScale
+            ) * layoutDirectionMultiplier
     }
 
     protected open fun MeasureContext.getCumulatedThickness(count: Int): Float {
