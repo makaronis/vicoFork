@@ -28,7 +28,6 @@ import com.patrykandpatrick.vico.core.chart.composed.ComposedChart
 import com.patrykandpatrick.vico.core.chart.dimensions.HorizontalDimensions
 import com.patrykandpatrick.vico.core.chart.dimensions.MutableHorizontalDimensions
 import com.patrykandpatrick.vico.core.chart.draw.CartesianChartDrawContext
-import com.patrykandpatrick.vico.core.chart.draw.ChartDrawContext
 import com.patrykandpatrick.vico.core.chart.draw.getMaxScrollDistance
 import com.patrykandpatrick.vico.core.chart.forEachIn
 import com.patrykandpatrick.vico.core.chart.layout.HorizontalLayout
@@ -98,12 +97,20 @@ public open class CandlestickChart(
 
     override val entryLocationMap: HashMap<Float, MutableList<Marker.EntryModel>> = HashMap()
 
-    private fun getFirstAndLastVisibleIndex(
-        itemsCount: Int,
+    private fun CartesianChartDrawContext.getFirstAndLastVisibleIndex(
+        model:CandlestickEntryModel,
+        chartValues: ChartValues,
         horizontalScroll: Float,
         maxScroll: Float,
     ): Pair<Int, Int> {
-        val oneSegmentWidth = segmentProperties.cellWidth
+        val itemsCount = model.entries.size
+        val candleEntry = model.entries.first()
+        val candle = config.getCandle(candleEntry.type)
+        val spacingMultiplier = (candleEntry.x - chartValues.minX) / chartValues.xStep
+
+        val oneSegmentWidth = horizontalDimensions.xSpacing *
+            spacingMultiplier + candle.thicknessDp.half.pixels * chartScale
+
         val viewportWidth = bounds.width()
         val scrollPercent = (horizontalScroll / (maxScroll / 100.0f)).roundToInt() / 100.0f
 
@@ -133,10 +140,12 @@ public open class CandlestickChart(
         chartValues: ChartValues,
         model: CandlestickEntryModel,
     ) {
+
         val (firstInx, lastInx) = getFirstAndLastVisibleIndex(
-            model.entries.size,
-            horizontalScroll,
-            getMaxScrollDistance(),
+            model = model,
+            chartValues = chartValues,
+            horizontalScroll = horizontalScroll,
+            maxScroll = getMaxScrollDistance(),
         )
         firstVisibleInx = firstInx
         lastVisibleInx = lastInx
@@ -235,10 +244,10 @@ public open class CandlestickChart(
         xStep: Float?,
     ) {
         chartValuesManager.tryUpdate(
-            minX = axisValuesOverrider?.getMinX(model) ?: model.minX,
-            maxX = axisValuesOverrider?.getMaxX(model) ?: model.maxX,
-            minY = axisValuesOverrider?.getMinY(model) ?: model.minY,
-            maxY = axisValuesOverrider?.getMaxY(model) ?: model.maxY,
+            minX = axisValuesOverrider?.getMinX(model,firstVisibleInx,lastVisibleInx) ?: model.minX,
+            maxX = axisValuesOverrider?.getMaxX(model,firstVisibleInx,lastVisibleInx) ?: model.maxX,
+            minY = axisValuesOverrider?.getMinY(model,firstVisibleInx,lastVisibleInx) ?: model.minY,
+            maxY = axisValuesOverrider?.getMaxY(model,firstVisibleInx,lastVisibleInx) ?: model.maxY,
             xStep = xStep ?: model.xGcd,
             model = model,
             axisPosition = targetVerticalAxisPosition,
