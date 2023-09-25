@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 by Patryk Goworowski and Patrick Michalik.
+ * Copyright 2023 by Patryk Goworowski and Patrick Michalik.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,14 @@ package com.patrykandpatrick.vico.core.chart
 import com.patrykandpatrick.vico.core.chart.column.ColumnChart
 import com.patrykandpatrick.vico.core.chart.composed.ComposedChart
 import com.patrykandpatrick.vico.core.chart.decoration.Decoration
-import com.patrykandpatrick.vico.core.chart.draw.ChartDrawContext
+import com.patrykandpatrick.vico.core.chart.dimensions.HorizontalDimensions
+import com.patrykandpatrick.vico.core.chart.draw.CartesianChartDrawContext
 import com.patrykandpatrick.vico.core.chart.insets.ChartInsetter
 import com.patrykandpatrick.vico.core.chart.line.LineChart
-import com.patrykandpatrick.vico.core.chart.segment.SegmentProperties
 import com.patrykandpatrick.vico.core.chart.values.AxisValuesOverrider
 import com.patrykandpatrick.vico.core.chart.values.ChartValues
 import com.patrykandpatrick.vico.core.chart.values.ChartValuesManager
-import com.patrykandpatrick.vico.core.context.MeasureContext
+import com.patrykandpatrick.vico.core.context.CartesianMeasureContext
 import com.patrykandpatrick.vico.core.dimensions.BoundsAware
 import com.patrykandpatrick.vico.core.entry.ChartEntryModel
 import com.patrykandpatrick.vico.core.marker.Marker
@@ -65,7 +65,7 @@ public interface Chart<in Model> : BoundsAware, ChartInsetter {
      *
      * @see ChartEntryModel.minY
      */
-    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE)
+    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE, level = DeprecationLevel.ERROR)
     public var minY: Float?
 
     /**
@@ -74,7 +74,7 @@ public interface Chart<in Model> : BoundsAware, ChartInsetter {
      *
      * @see ChartEntryModel.maxY
      */
-    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE)
+    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE, level = DeprecationLevel.ERROR)
     public var maxY: Float?
 
     /**
@@ -83,7 +83,7 @@ public interface Chart<in Model> : BoundsAware, ChartInsetter {
      *
      * @see ChartEntryModel.minX
      */
-    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE)
+    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE, level = DeprecationLevel.ERROR)
     public var minX: Float?
 
     /**
@@ -92,7 +92,7 @@ public interface Chart<in Model> : BoundsAware, ChartInsetter {
      *
      * @see ChartEntryModel.maxX
      */
-    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE)
+    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE, level = DeprecationLevel.ERROR)
     public var maxX: Float?
 
     /**
@@ -101,10 +101,10 @@ public interface Chart<in Model> : BoundsAware, ChartInsetter {
      * @param context holds the data needed to draw the [Chart].
      * @param model holds data about the [Chart]’s entries.
      *
-     * @see ChartDrawContext
+     * @see CartesianChartDrawContext
      */
     public fun drawScrollableContent(
-        context: ChartDrawContext,
+        context: CartesianChartDrawContext,
         model: Model,
     )
 
@@ -114,10 +114,10 @@ public interface Chart<in Model> : BoundsAware, ChartInsetter {
      * @param context holds the data needed to draw the [Chart].
      * @param model holds data about the [Chart]’s entries.
      *
-     * @see ChartDrawContext
+     * @see CartesianChartDrawContext
      */
     public fun drawNonScrollableContent(
-        context: ChartDrawContext,
+        context: CartesianChartDrawContext,
         model: Model,
     )
 
@@ -178,21 +178,22 @@ public interface Chart<in Model> : BoundsAware, ChartInsetter {
     public fun removePersistentMarker(x: Float)
 
     /**
-     * Called to get the [SegmentProperties] of this chart. The [SegmentProperties] influence the look of various
+     * Called to get the [HorizontalDimensions] of this chart. The [HorizontalDimensions] influence the look of various
      * parts of the chart.
      *
      * @param context holds data used for component measurements.
      * @param model holds data about the [Chart]’s entries.
      */
-    public fun getSegmentProperties(context: MeasureContext, model: Model): SegmentProperties
+    public fun getHorizontalDimensions(context: CartesianMeasureContext, model: Model): HorizontalDimensions
 
     /**
      * Updates the [ChartValues] stored in the provided [ChartValuesManager] instance to this [Chart]’s [ChartValues].
      *
      * @param chartValuesManager the [ChartValuesManager] whose properties will be updated.
      * @param model holds data about the [Chart]’s entries.
+     * @param xStep the overridden _x_ step (or `null` if no override has occurred).
      */
-    public fun updateChartValues(chartValuesManager: ChartValuesManager, model: Model)
+    public fun updateChartValues(chartValuesManager: ChartValuesManager, model: Model, xStep: Float?)
 }
 
 /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 by Patryk Goworowski and Patrick Michalik.
+ * Copyright 2023 by Patryk Goworowski and Patrick Michalik.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.patrykandpatrick.vico.compose.chart.column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.Dp
-import com.patrykandpatrick.vico.compose.chart.Chart
+import com.patrykandpatrick.vico.compose.chart.CartesianChartHost
 import com.patrykandpatrick.vico.compose.style.currentChartStyle
 import com.patrykandpatrick.vico.core.axis.AxisPosition
 import com.patrykandpatrick.vico.core.axis.AxisRenderer
@@ -40,11 +40,10 @@ import com.patrykandpatrick.vico.core.marker.Marker
  * Creates a [ColumnChart].
  *
  * @param columns the [LineComponent] instances to use for columns. This list is iterated through as many times
- * as necessary for each chart segment. If the list contains a single element, all columns have the same appearance.
- * @param spacing the horizontal padding between the edges of chart segments and the columns they contain.
- * @param innerSpacing the spacing between the columns contained in chart segments. This has no effect on
- * segments that contain a single column only.
- * @param mergeMode defines how columns should be drawn in multi-column segments.
+ * as necessary for each column collection. If the list contains a single element, all columns have the same appearance.
+ * @param spacing the distance between neighboring column collections.
+ * @param innerSpacing the distance between neighboring grouped columns.
+ * @param mergeMode defines how columns should be drawn in column collections.
  * @param decorations the list of [Decoration]s that will be added to the [ColumnChart].
  * @param persistentMarkers maps x-axis values to persistent [Marker]s.
  * @param dataLabel an optional [TextComponent] to use for data labels.
@@ -56,7 +55,7 @@ import com.patrykandpatrick.vico.core.marker.Marker
  * @param targetVerticalAxisPosition if this is set, any [AxisRenderer] with an [AxisPosition] equal to the provided
  * value will use the [ChartValues] provided by this chart. This is meant to be used with [ComposedChart].
  *
- * @see Chart
+ * @see CartesianChartHost
  * @see ColumnChart
  */
 @Composable
@@ -92,11 +91,10 @@ public fun columnChart(
  * Creates a [ColumnChart].
  *
  * @param columns the [LineComponent] instances to use for columns. This list is iterated through as many times
- * as necessary for each chart segment. If the list contains a single element, all columns have the same appearance.
- * @param spacing the horizontal padding between the edges of chart segments and the columns they contain.
- * @param innerSpacing the spacing between the columns contained in chart segments. This has no effect on
- * segments that contain a single column only.
- * @param mergeMode defines how columns should be drawn in multi-column segments.
+ * as necessary for each column collection. If the list contains a single element, all columns have the same appearance.
+ * @param spacing the distance between neighboring column collections.
+ * @param innerSpacing the distance between neighboring grouped columns.
+ * @param mergeMode defines how columns should be drawn in column collections.
  * @param minX the minimum value shown on the x-axis. If not null, this overrides [ChartEntryModel.minX].
  * @param maxX the maximum value shown on the x-axis. If not null, this overrides [ChartEntryModel.maxX].
  * @param minY the minimum value shown on the y-axis. If not null, this overrides [ChartEntryModel.minY].
@@ -111,11 +109,11 @@ public fun columnChart(
  * @param dataLabelValueFormatter the [ValueFormatter] to use for data labels.
  * @param dataLabelRotationDegrees the rotation of data labels (in degrees).
  *
- * @see Chart
+ * @see CartesianChartHost
  * @see ColumnChart
  */
-@Deprecated(message = "Axis values should be overridden `AxisValuesOverrider`.")
-@Suppress("DEPRECATION")
+@Deprecated(message = "Axis values should be overridden `AxisValuesOverrider`.", level = DeprecationLevel.ERROR)
+@Suppress("DEPRECATION_ERROR")
 @Composable
 public fun columnChart(
     columns: List<LineComponent> = currentChartStyle.columnChart.columns,

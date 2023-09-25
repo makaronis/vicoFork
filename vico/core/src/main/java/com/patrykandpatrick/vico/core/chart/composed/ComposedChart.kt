@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 by Patryk Goworowski and Patrick Michalik.
+ * Copyright 2023 by Patryk Goworowski and Patrick Michalik.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,17 @@
 
 package com.patrykandpatrick.vico.core.chart.composed
 
-import com.patrykandpatrick.vico.core.axis.horizontal.HorizontalAxis
 import com.patrykandpatrick.vico.core.chart.AXIS_VALUES_DEPRECATION_MESSAGE
 import com.patrykandpatrick.vico.core.chart.BaseChart
 import com.patrykandpatrick.vico.core.chart.Chart
-import com.patrykandpatrick.vico.core.chart.draw.ChartDrawContext
+import com.patrykandpatrick.vico.core.chart.dimensions.HorizontalDimensions
+import com.patrykandpatrick.vico.core.chart.dimensions.MutableHorizontalDimensions
+import com.patrykandpatrick.vico.core.chart.draw.CartesianChartDrawContext
 import com.patrykandpatrick.vico.core.chart.insets.ChartInsetter
 import com.patrykandpatrick.vico.core.chart.insets.HorizontalInsets
 import com.patrykandpatrick.vico.core.chart.insets.Insets
-import com.patrykandpatrick.vico.core.chart.segment.MutableSegmentProperties
-import com.patrykandpatrick.vico.core.chart.segment.SegmentProperties
 import com.patrykandpatrick.vico.core.chart.values.ChartValuesManager
-import com.patrykandpatrick.vico.core.context.MeasureContext
+import com.patrykandpatrick.vico.core.context.CartesianMeasureContext
 import com.patrykandpatrick.vico.core.entry.ChartEntryModel
 import com.patrykandpatrick.vico.core.extension.set
 import com.patrykandpatrick.vico.core.extension.updateAll
@@ -52,27 +51,27 @@ public class ComposedChart<Model : ChartEntryModel>(
 
     private val tempInsets = Insets()
 
-    private val segmentProperties = MutableSegmentProperties()
+    private val horizontalDimensions = MutableHorizontalDimensions()
 
     override val entryLocationMap: TreeMap<Float, MutableList<Marker.EntryModel>> = TreeMap()
 
     override val chartInsetters: Collection<ChartInsetter>
         get() = charts.map { it.chartInsetters }.flatten() + persistentMarkers.values
 
-    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE)
-    @Suppress("DEPRECATION")
+    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE, level = DeprecationLevel.ERROR)
+    @Suppress("DEPRECATION_ERROR")
     override var minY: Float? by childChartsValue { minY = it }
 
-    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE)
-    @Suppress("DEPRECATION")
+    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE, level = DeprecationLevel.ERROR)
+    @Suppress("DEPRECATION_ERROR")
     override var maxY: Float? by childChartsValue { maxY = it }
 
-    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE)
-    @Suppress("DEPRECATION")
+    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE, level = DeprecationLevel.ERROR)
+    @Suppress("DEPRECATION_ERROR")
     override var minX: Float? by childChartsValue { minX = it }
 
-    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE)
-    @Suppress("DEPRECATION")
+    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE, level = DeprecationLevel.ERROR)
+    @Suppress("DEPRECATION_ERROR")
     override var maxX: Float? by childChartsValue { maxX = it }
 
     override fun setBounds(left: Number, top: Number, right: Number, bottom: Number) {
@@ -81,7 +80,7 @@ public class ComposedChart<Model : ChartEntryModel>(
     }
 
     override fun drawChart(
-        context: ChartDrawContext,
+        context: CartesianChartDrawContext,
         model: ComposedChartEntryModel<Model>,
     ) {
         entryLocationMap.clear()
@@ -91,60 +90,57 @@ public class ComposedChart<Model : ChartEntryModel>(
         }
     }
 
-    override fun drawChartInternal(context: ChartDrawContext, model: ComposedChartEntryModel<Model>) {
+    override fun drawChartInternal(context: CartesianChartDrawContext, model: ComposedChartEntryModel<Model>) {
         drawDecorationBehindChart(context)
         if (model.entries.isNotEmpty()) {
             drawChart(context, model)
         }
     }
 
-    override fun getSegmentProperties(
-        context: MeasureContext,
+    override fun getHorizontalDimensions(
+        context: CartesianMeasureContext,
         model: ComposedChartEntryModel<Model>,
-    ): SegmentProperties {
-        segmentProperties.clear()
+    ): HorizontalDimensions {
+        horizontalDimensions.clear()
         model.forEachModelWithChart { item, chart ->
-            val chartSegmentProperties = chart.getSegmentProperties(context, item)
-            segmentProperties.apply {
-                cellWidth = maxOf(cellWidth, chartSegmentProperties.cellWidth)
-                marginWidth = maxOf(marginWidth, chartSegmentProperties.marginWidth)
-                labelPosition = getProperLabelPosition(labelPosition, chartSegmentProperties.labelPosition)
+            val chartHorizontalDimensions = chart.getHorizontalDimensions(context, item)
+            horizontalDimensions.apply {
+                xSpacing = maxOf(xSpacing, chartHorizontalDimensions.xSpacing)
+                scalableStartPadding = maxOf(scalableStartPadding, chartHorizontalDimensions.scalableStartPadding)
+                scalableEndPadding = maxOf(scalableEndPadding, chartHorizontalDimensions.scalableEndPadding)
+                unscalableStartPadding = maxOf(unscalableStartPadding, chartHorizontalDimensions.unscalableStartPadding)
+                unscalableEndPadding = maxOf(unscalableEndPadding, chartHorizontalDimensions.unscalableEndPadding)
             }
         }
-        return segmentProperties
+        return horizontalDimensions
     }
-
-    private fun getProperLabelPosition(
-        first: HorizontalAxis.LabelPosition?,
-        second: HorizontalAxis.LabelPosition?,
-    ): HorizontalAxis.LabelPosition =
-        if (first == null || first == second && second == HorizontalAxis.LabelPosition.Start) {
-            HorizontalAxis.LabelPosition.Start
-        } else {
-            HorizontalAxis.LabelPosition.Center
-        }
 
     override fun updateChartValues(
         chartValuesManager: ChartValuesManager,
         model: ComposedChartEntryModel<Model>,
+        xStep: Float?,
     ) {
         model.forEachModelWithChart { item, chart ->
-            chart.updateChartValues(chartValuesManager, item)
+            chart.updateChartValues(chartValuesManager, item, xStep)
         }
     }
 
     override fun getInsets(
-        context: MeasureContext,
+        context: CartesianMeasureContext,
         outInsets: Insets,
-        segmentProperties: SegmentProperties,
+        horizontalDimensions: HorizontalDimensions,
     ) {
         charts.forEach { chart ->
-            chart.getInsets(context, tempInsets, segmentProperties)
+            chart.getInsets(context, tempInsets, horizontalDimensions)
             outInsets.setValuesIfGreater(tempInsets)
         }
     }
 
-    override fun getHorizontalInsets(context: MeasureContext, availableHeight: Float, outInsets: HorizontalInsets) {
+    override fun getHorizontalInsets(
+        context: CartesianMeasureContext,
+        availableHeight: Float,
+        outInsets: HorizontalInsets,
+    ) {
         charts.forEach { chart ->
             chart.getHorizontalInsets(context, availableHeight, tempInsets)
             outInsets.setValuesIfGreater(start = tempInsets.start, end = tempInsets.end)

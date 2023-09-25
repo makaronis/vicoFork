@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 by Patryk Goworowski and Patrick Michalik.
+ * Copyright 2023 by Patryk Goworowski and Patrick Michalik.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 package com.patrykandpatrick.vico.core.context
 
 import android.graphics.RectF
-import com.patrykandpatrick.vico.core.chart.values.ChartValues
-import com.patrykandpatrick.vico.core.chart.values.ChartValuesManager
 
 /**
  * A [MeasureContext] implementation that facilitates the mutation of some of its properties.
@@ -28,21 +26,9 @@ public data class MutableMeasureContext(
     override var density: Float,
     override var fontScale: Float,
     override var isLtr: Boolean,
-    override var isHorizontalScrollEnabled: Boolean = false,
-    override var chartScale: Float = 1f,
 ) : MeasureContext, Extras by DefaultExtras() {
-
-    override val chartValuesManager: ChartValuesManager = ChartValuesManager()
 
     override fun reset() {
         clearExtras()
-        chartValuesManager.resetChartValues()
-    }
-
-    /**
-     * Resets the values stored in each of the [ChartValues] instances in the [ChartValuesManager.chartValues] map.
-     */
-    public fun resetChartValues() {
-        chartValuesManager.resetChartValues()
     }
 }

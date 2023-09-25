@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 by Patryk Goworowski and Patrick Michalik.
+ * Copyright 2023 by Patryk Goworowski and Patrick Michalik.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,35 +88,35 @@ internal inline val Iterable<Iterable<ChartEntry>>.yRange: ClosedFloatingPointRa
 internal inline val Iterable<Iterable<Entry>>.xRange: ClosedFloatingPointRange<Float>
     get() = flatten().xRange
 
-@get:JvmName("xRangeFlat")
-internal inline val Iterable<Entry>.xRange: ClosedFloatingPointRange<Float>
-    get() = rangeOfOrNull { it.x } ?: 0f..0f
-
-internal fun Iterable<Iterable<Entry>>.calculateStep(): Float {
-    var step: Float? = null
+@JvmName("calculateXGcdForCollectionOfEntries")
+internal fun <E : Entry> Iterable<Iterable<E>>.calculateXGcd(): Float {
+    var gcd: Float? = null
     forEach { entryCollection ->
-        step = entryCollection.calculateStep(step)
+        gcd = entryCollection.calculateXGcd()
     }
-    return step ?: 1f
+    return gcd ?: 1f
 }
 
-internal fun Iterable<Entry>.calculateStep(currentStep: Float? = null): Float {
-    var step: Float? = currentStep
+internal fun <E : Entry> Iterable<E>.calculateXGcd(): Float {
+    var gcd: Float? = null
     val iterator = iterator()
-    var currentEntry: Entry
-    var previousEntry: Entry? = null
+    var currentEntry: E
+    var previousEntry: E? = null
     while (iterator.hasNext()) {
         currentEntry = iterator.next()
         previousEntry?.let { prevEntry ->
             val difference = abs(x = currentEntry.x - prevEntry.x)
-            step = step?.gcdWith(other = difference) ?: difference
+            gcd = gcd?.gcdWith(other = difference) ?: difference
         }
         previousEntry = currentEntry
     }
-    if (step == -1f) step = 1f
-
-    return step ?: 1f
+    if (gcd == -1f) gcd = 1f
+    return gcd ?: 1f
 }
+
+@get:JvmName("xRangeFlat")
+internal inline val Iterable<Entry>.xRange: ClosedFloatingPointRange<Float>
+    get() = rangeOfOrNull { it.x } ?: 0f..0f
 
 internal fun Iterable<Iterable<ChartEntry>>.calculateStackedYRange(): ClosedFloatingPointRange<Float> =
     flatten().fold(HashMap<Float, Pair<Float, Float>>()) { map, entry ->

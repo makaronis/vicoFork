@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 by Patryk Goworowski and Patrick Michalik.
+ * Copyright 2023 by Patryk Goworowski and Patrick Michalik.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.patrykandpatrick.vico.core.chart
 
 import android.graphics.RectF
 import com.patrykandpatrick.vico.core.chart.decoration.Decoration
-import com.patrykandpatrick.vico.core.chart.draw.ChartDrawContext
+import com.patrykandpatrick.vico.core.chart.draw.CartesianChartDrawContext
 import com.patrykandpatrick.vico.core.chart.insets.ChartInsetter
 import com.patrykandpatrick.vico.core.chart.insets.Insets
 import com.patrykandpatrick.vico.core.chart.values.AxisValuesOverrider
@@ -51,16 +51,16 @@ public abstract class BaseChart<Model : EntryModel<*>> : Chart<Model>, BoundsAwa
 
     override var axisValuesOverrider: AxisValuesOverrider<Model>? = null
 
-    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE)
+    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE, level = DeprecationLevel.ERROR)
     override var minY: Float? = null
 
-    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE)
+    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE, level = DeprecationLevel.ERROR)
     override var maxY: Float? = null
 
-    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE)
+    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE, level = DeprecationLevel.ERROR)
     override var minX: Float? = null
 
-    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE)
+    @Deprecated(message = AXIS_VALUES_DEPRECATION_MESSAGE, level = DeprecationLevel.ERROR)
     override var maxX: Float? = null
 
     override fun addDecoration(decoration: Decoration): Boolean = decorations.add(decoration)
@@ -84,16 +84,16 @@ public abstract class BaseChart<Model : EntryModel<*>> : Chart<Model>, BoundsAwa
     }
 
     override fun drawScrollableContent(
-        context: ChartDrawContext,
+        context: CartesianChartDrawContext,
         model: Model,
     ): Unit = with(context) {
         insets.clear()
-        getInsets(this, insets, segmentProperties)
+        getInsets(this, insets, horizontalDimensions)
         drawChartInternal(context, model)
     }
 
     override fun drawNonScrollableContent(
-        context: ChartDrawContext,
+        context: CartesianChartDrawContext,
         model: Model,
     ): Unit = with(context) {
         canvas.inClip(
@@ -110,6 +110,7 @@ public abstract class BaseChart<Model : EntryModel<*>> : Chart<Model>, BoundsAwa
                     context = context,
                     bounds = bounds,
                     markedEntries = markerModel,
+                    chartValuesProvider = chartValuesManager,
                 )
             }
         }
@@ -119,7 +120,7 @@ public abstract class BaseChart<Model : EntryModel<*>> : Chart<Model>, BoundsAwa
      * An internal function that draws both [Decoration]s behind the chart and the chart itself in the clip bounds.
      */
     protected open fun drawChartInternal(
-        context: ChartDrawContext,
+        context: CartesianChartDrawContext,
         model: Model,
     ): Unit = with(context) {
         canvas.inClip(
@@ -136,15 +137,15 @@ public abstract class BaseChart<Model : EntryModel<*>> : Chart<Model>, BoundsAwa
     }
 
     protected abstract fun drawChart(
-        context: ChartDrawContext,
+        context: CartesianChartDrawContext,
         model: Model,
     )
 
-    protected fun drawDecorationBehindChart(context: ChartDrawContext) {
+    protected fun drawDecorationBehindChart(context: CartesianChartDrawContext) {
         decorations.forEach { line -> line.onDrawBehindChart(context, bounds) }
     }
 
-    protected fun drawDecorationAboveChart(context: ChartDrawContext) {
+    protected fun drawDecorationAboveChart(context: CartesianChartDrawContext) {
         decorations.forEach { line -> line.onDrawAboveChart(context, bounds) }
     }
 }

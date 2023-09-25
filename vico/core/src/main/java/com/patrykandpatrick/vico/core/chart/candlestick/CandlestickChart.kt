@@ -25,16 +25,18 @@ import com.patrykandpatrick.vico.core.candlestickentry.CandlestickEntryModel
 import com.patrykandpatrick.vico.core.candlestickentry.CandlestickEntryType
 import com.patrykandpatrick.vico.core.chart.BaseChart
 import com.patrykandpatrick.vico.core.chart.composed.ComposedChart
+import com.patrykandpatrick.vico.core.chart.dimensions.HorizontalDimensions
+import com.patrykandpatrick.vico.core.chart.dimensions.MutableHorizontalDimensions
+import com.patrykandpatrick.vico.core.chart.draw.CartesianChartDrawContext
 import com.patrykandpatrick.vico.core.chart.draw.ChartDrawContext
 import com.patrykandpatrick.vico.core.chart.draw.getMaxScrollDistance
 import com.patrykandpatrick.vico.core.chart.forEachIn
+import com.patrykandpatrick.vico.core.chart.layout.HorizontalLayout
 import com.patrykandpatrick.vico.core.chart.put
-import com.patrykandpatrick.vico.core.chart.segment.MutableSegmentProperties
-import com.patrykandpatrick.vico.core.chart.segment.SegmentProperties
 import com.patrykandpatrick.vico.core.chart.values.ChartValues
 import com.patrykandpatrick.vico.core.chart.values.ChartValuesManager
 import com.patrykandpatrick.vico.core.component.shape.LineComponent
-import com.patrykandpatrick.vico.core.context.MeasureContext
+import com.patrykandpatrick.vico.core.context.CartesianMeasureContext
 import com.patrykandpatrick.vico.core.entry.ChartEntry
 import com.patrykandpatrick.vico.core.entry.entryOf
 import com.patrykandpatrick.vico.core.extension.getStart
@@ -73,12 +75,26 @@ public open class CandlestickChart(
         public val lowerWick: LineComponent = upperWick,
     ) {
 
+        /**
+         * Returns the maximum thickness among all of the candle components.
+         */
+        val thicknessDp: Float
+            get() = maxOf(
+                realBody.thicknessDp,
+                upperWick.thicknessDp,
+                lowerWick.thicknessDp,
+            )
+
         // Empty companion object is needed for extension functions.
         public companion object
     }
 
     private val heightMap = HashMap<Float, Pair<Float, Float>>()
-    private val segmentProperties = MutableSegmentProperties()
+
+    /**
+     * Holds information on the [CandlestickChart]’s horizontal dimensions.
+     */
+    protected val horizontalDimensions: MutableHorizontalDimensions = MutableHorizontalDimensions()
 
     override val entryLocationMap: HashMap<Float, MutableList<Marker.EntryModel>> = HashMap()
 
@@ -102,24 +118,20 @@ public open class CandlestickChart(
 
 
     override fun drawChart(
-        context: ChartDrawContext,
+        context: CartesianChartDrawContext,
         model: CandlestickEntryModel,
     ): Unit = with(context) {
         entryLocationMap.clear()
         drawChartInternal(
             chartValues = chartValuesManager.getChartValues(axisPosition = targetVerticalAxisPosition),
             model = model,
-            cellWidth = segmentProperties.cellWidth,
-            spacing = segmentProperties.marginWidth,
         )
         heightMap.clear()
     }
 
-    private fun ChartDrawContext.drawChartInternal(
+    private fun CartesianChartDrawContext.drawChartInternal(
         chartValues: ChartValues,
         model: CandlestickEntryModel,
-        cellWidth: Float,
-        spacing: Float,
     ) {
         val (firstInx, lastInx) = getFirstAndLastVisibleIndex(
             model.entries.size,
@@ -132,8 +144,10 @@ public open class CandlestickChart(
         val yRange = (chartValues.maxY - chartValues.minY).takeIf { it != 0f } ?: return
         val heightMultiplier = bounds.height() / yRange
 
-        val drawingStart: Float =
-            bounds.getStart(isLtr = isLtr) + layoutDirectionMultiplier * spacing.half - horizontalScroll
+        val drawingStart: Float = bounds.getStart(isLtr = isLtr) +
+            horizontalDimensions.scaled(chartScale).startPadding -
+            config.maxThicknessDp.half.pixels * layoutDirectionMultiplier * chartScale - horizontalScroll
+
         var bodyCenterX: Float
         var candle: Candle
         var bodyTop: Float
@@ -146,12 +160,12 @@ public open class CandlestickChart(
 
             candle = config.getCandle(entry.type)
 
-            bodyCenterX = drawingStart + layoutDirectionMultiplier *
-                (cellWidth + spacing) * (entry.x - chartValues.minX) / model.stepX
+            val xSpacingMultiplier = (entry.x - chartValues.minX) / chartValues.xStep
+            bodyCenterX = drawingStart + layoutDirectionMultiplier * horizontalDimensions.xSpacing *
+                xSpacingMultiplier + candle.thicknessDp.half.pixels * chartScale
 
             bodyBottom = (zeroLinePosition - minOf(entry.close, entry.open) * heightMultiplier).round
             bodyTop = (zeroLinePosition - maxOf(entry.close, entry.open) * heightMultiplier).round
-            bodyCenterX += layoutDirectionMultiplier * cellWidth.half
 
             if (bodyBottom - bodyTop < minRealBodyHeight) {
                 bodyBottom = (bodyBottom + bodyTop).half + minRealBodyHeight.half
@@ -167,7 +181,6 @@ public open class CandlestickChart(
                     thicknessScale = chartScale,
                 )
             ) {
-
                 listOf(entry.low, entry.open, entry.close, entry.high)
                     .forEach { entryY ->
                         updateMarkerLocationMap(
@@ -211,55 +224,72 @@ public open class CandlestickChart(
                 y = columnTop.coerceIn(bounds.top, bounds.bottom),
                 entry = entry,
                 color = realBody.solidOrStrokeColor,
+                index = 0,
             )
         }
     }
 
-    override fun updateChartValues(chartValuesManager: ChartValuesManager, model: CandlestickEntryModel) {
+    override fun updateChartValues(
+        chartValuesManager: ChartValuesManager,
+        model: CandlestickEntryModel,
+        xStep: Float?,
+    ) {
         chartValuesManager.tryUpdate(
-            minX = axisValuesOverrider?.getMinX(model, firstVisibleInx, lastVisibleInx) ?: model.minX,
-            maxX = axisValuesOverrider?.getMaxX(model, firstVisibleInx, lastVisibleInx) ?: model.maxX,
-            minY = axisValuesOverrider?.getMinY(model, firstVisibleInx, lastVisibleInx) ?: model.minY,
-            maxY = axisValuesOverrider?.getMaxY(model, firstVisibleInx, lastVisibleInx) ?: model.maxY,
+            minX = axisValuesOverrider?.getMinX(model) ?: model.minX,
+            maxX = axisValuesOverrider?.getMaxX(model) ?: model.maxX,
+            minY = axisValuesOverrider?.getMinY(model) ?: model.minY,
+            maxY = axisValuesOverrider?.getMaxY(model) ?: model.maxY,
+            xStep = xStep ?: model.xGcd,
             model = model,
             axisPosition = targetVerticalAxisPosition,
         )
     }
 
-    override fun getSegmentProperties(
-        context: MeasureContext,
+    override fun getHorizontalDimensions(
+        context: CartesianMeasureContext,
         model: CandlestickEntryModel,
-    ): SegmentProperties = with(context) {
-        segmentProperties.set(
-            cellWidth = config.maxThicknessDp.pixels,
-            marginWidth = spacingDp.pixels,
-        )
+    ): HorizontalDimensions = with(context) {
+        val columnCollectionWidth = config.maxThicknessDp.pixels
+        horizontalDimensions.apply {
+            xSpacing = columnCollectionWidth + spacingDp.pixels
+            when (horizontalLayout) {
+                is HorizontalLayout.Segmented -> {
+                    scalableStartPadding = xSpacing.half
+                    scalableEndPadding = scalableStartPadding
+                }
+
+                is HorizontalLayout.FullWidth -> {
+                    scalableStartPadding = columnCollectionWidth.half + horizontalLayout.startPaddingDp.pixels
+                    scalableEndPadding = columnCollectionWidth.half + horizontalLayout.endPaddingDp.pixels
+                }
+            }
+        }
     }
 
     /**
      * TODO
      *
-     * @param filledGreenCandle TODO
-     * @param filledGrayCandle TODO
-     * @param filledRedCandle TODO
-     * @param crossGreenCandle TODO
-     * @param crossGrayCandle TODO
-     * @param crossRedCandle TODO
-     * @param hollowGreenCandle TODO
-     * @param hollowGrayCandle TODO
-     * @param hollowRedCandle TODO
+     * @param absolutelyIncreasingRelativelyIncreasing TODO
+     * @param absolutelyIncreasingRelativelyZero TODO
+     * @param absolutelyIncreasingRelativelyDecreasing TODO
+     * @param absolutelyZeroRelativelyIncreasing TODO
+     * @param absolutelyZeroRelativelyZero TODO
+     * @param absolutelyZeroRelativelyDecreasing TODO
+     * @param absolutelyDecreasingRelativelyIncreasing TODO
+     * @param absolutelyDecreasingRelativelyZero TODO
+     * @param absolutelyDecreasingRelativelyDecreasing TODO
      */
     @Suppress("LongParameterList")
     public class Config(
-        public val filledGreenCandle: Candle,
-        public val filledGrayCandle: Candle,
-        public val filledRedCandle: Candle,
-        public val crossGreenCandle: Candle,
-        public val crossGrayCandle: Candle,
-        public val crossRedCandle: Candle,
-        public val hollowGreenCandle: Candle,
-        public val hollowGrayCandle: Candle,
-        public val hollowRedCandle: Candle,
+        public val absolutelyIncreasingRelativelyIncreasing: Candle,
+        public val absolutelyIncreasingRelativelyZero: Candle,
+        public val absolutelyIncreasingRelativelyDecreasing: Candle,
+        public val absolutelyZeroRelativelyIncreasing: Candle,
+        public val absolutelyZeroRelativelyZero: Candle,
+        public val absolutelyZeroRelativelyDecreasing: Candle,
+        public val absolutelyDecreasingRelativelyIncreasing: Candle,
+        public val absolutelyDecreasingRelativelyZero: Candle,
+        public val absolutelyDecreasingRelativelyDecreasing: Candle,
     ) {
 
         /**
@@ -267,47 +297,43 @@ public open class CandlestickChart(
          */
         public val maxThicknessDp: Float
             get() = maxOf(
-                filledGreenCandle.realBody.thicknessDp,
-                filledGrayCandle.realBody.thicknessDp,
-                filledRedCandle.realBody.thicknessDp,
-                crossGreenCandle.realBody.thicknessDp,
-                crossGrayCandle.realBody.thicknessDp,
-                crossRedCandle.realBody.thicknessDp,
-                hollowGreenCandle.realBody.thicknessDp,
-                hollowGrayCandle.realBody.thicknessDp,
-                hollowRedCandle.realBody.thicknessDp,
+                absolutelyIncreasingRelativelyIncreasing.realBody.thicknessDp,
+                absolutelyIncreasingRelativelyZero.realBody.thicknessDp,
+                absolutelyIncreasingRelativelyDecreasing.realBody.thicknessDp,
+                absolutelyZeroRelativelyIncreasing.realBody.thicknessDp,
+                absolutelyZeroRelativelyZero.realBody.thicknessDp,
+                absolutelyZeroRelativelyDecreasing.realBody.thicknessDp,
+                absolutelyDecreasingRelativelyIncreasing.realBody.thicknessDp,
+                absolutelyDecreasingRelativelyZero.realBody.thicknessDp,
+                absolutelyDecreasingRelativelyDecreasing.realBody.thicknessDp,
             )
 
         /**
          * TODO
          */
         public fun getCandle(type: CandlestickEntryType): Candle =
-            when (type) {
-                is CandlestickEntryType.Filled ->
-                    when (type.color) {
-                        CandlestickEntryType.Color.Green -> filledGreenCandle
-                        CandlestickEntryType.Color.Red -> filledRedCandle
-                        CandlestickEntryType.Color.Gray -> filledGrayCandle
-                    }
-
-                is CandlestickEntryType.Cross ->
-                    when (type.color) {
-                        CandlestickEntryType.Color.Green -> crossGreenCandle
-                        CandlestickEntryType.Color.Red -> crossRedCandle
-                        CandlestickEntryType.Color.Gray -> crossGrayCandle
-                    }
-
-                is CandlestickEntryType.Hollow ->
-                    when (type.color) {
-                        CandlestickEntryType.Color.Green -> hollowGreenCandle
-                        CandlestickEntryType.Color.Red -> hollowRedCandle
-                        CandlestickEntryType.Color.Gray -> hollowGrayCandle
-                    }
+            when(type.absoluteChange) {
+                CandlestickEntryType.Change.Increase -> when (type.relativeChange) {
+                    CandlestickEntryType.Change.Increase -> absolutelyIncreasingRelativelyIncreasing
+                    CandlestickEntryType.Change.Decrease -> absolutelyDecreasingRelativelyDecreasing
+                    CandlestickEntryType.Change.Zero -> absolutelyIncreasingRelativelyZero
+                }
+                CandlestickEntryType.Change.Decrease -> when (type.relativeChange) {
+                    CandlestickEntryType.Change.Increase -> absolutelyDecreasingRelativelyIncreasing
+                    CandlestickEntryType.Change.Decrease -> absolutelyDecreasingRelativelyDecreasing
+                    CandlestickEntryType.Change.Zero -> absolutelyDecreasingRelativelyZero
+                }
+                CandlestickEntryType.Change.Zero -> when (type.relativeChange) {
+                    CandlestickEntryType.Change.Increase -> absolutelyZeroRelativelyIncreasing
+                    CandlestickEntryType.Change.Decrease -> absolutelyDecreasingRelativelyZero
+                    CandlestickEntryType.Change.Zero -> absolutelyZeroRelativelyZero
+                }
             }
 
         public companion object
     }
 }
+
 private fun LineComponent.copyAsWick(): LineComponent =
     copy(
         color = if (color == Color.TRANSPARENT) strokeColor else color,

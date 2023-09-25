@@ -17,6 +17,7 @@
 package com.patrykandpatrick.vico.core.extension
 
 import android.graphics.RectF
+import com.patrykandpatrick.vico.core.model.Point
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
@@ -92,7 +93,6 @@ public fun RectF.copy(): RectF = RectF(this)
  * Creates a [RectF] representing the bounding box of this [RectF] rotated by the provided number of degrees.
  */
 public fun RectF.rotate(degrees: Float): RectF {
-
     when {
         degrees % PI_RAD == 0f -> Unit
         degrees % 0.5f.piRad == 0f -> {
@@ -144,3 +144,51 @@ public fun RectF.getStart(isLtr: Boolean): Float = if (isLtr) left else right
  * Returns [RectF.right] if [isLtr] is true, and [RectF.left] otherwise.
  */
 public fun RectF.getEnd(isLtr: Boolean): Float = if (isLtr) right else left
+
+/**
+ * Updates the coordinates of this [RectF] if the provided coordinates exceed the current ones.
+ */
+public fun RectF.updateIfExceeds(x: Float, y: Float) {
+    updateBounds(
+        left = left.coerceAtMost(x),
+        top = top.coerceAtMost(y),
+        right = right.coerceAtLeast(x),
+        bottom = bottom.coerceAtLeast(y),
+    )
+}
+
+/**
+ * Returns the radius of this [RectF], as if it were a circle.
+ * Throws an [IllegalArgumentException] if this [RectF] is not a square.
+ */
+public val RectF.radius: Float
+    get() {
+        require(width() == height()) { "RectF must be a square." }
+        return width().half
+    }
+
+/**
+ * Returns the center point of this [RectF].
+ */
+public val RectF.centerPoint: Point
+    get() = Point(centerX(), centerY())
+
+/**
+ * @see RectF.left
+ */
+public operator fun RectF.component1(): Float = left
+
+/**
+ * @see RectF.top
+ */
+public operator fun RectF.component2(): Float = top
+
+/**
+ * @see RectF.right
+ */
+public operator fun RectF.component3(): Float = right
+
+/**
+ * @see RectF.bottom
+ */
+public operator fun RectF.component4(): Float = bottom

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 by Patryk Goworowski and Patrick Michalik.
+ * Copyright 2023 by Patryk Goworowski and Patrick Michalik.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,26 +19,25 @@ package com.patrykandpatrick.vico.core.draw
 import android.graphics.Canvas
 import android.graphics.RectF
 import com.patrykandpatrick.vico.core.DefaultColors
-import com.patrykandpatrick.vico.core.chart.values.ChartValuesManager
+import com.patrykandpatrick.vico.core.context.CartesianDrawContext
 import com.patrykandpatrick.vico.core.context.DefaultExtras
 import com.patrykandpatrick.vico.core.context.DrawContext
 import com.patrykandpatrick.vico.core.context.Extras
 
 /**
- * Calls the specified function block with [DrawContext.canvas] as its receiver.
+ * Calls the specified function block with [CartesianDrawContext.canvas] as its receiver.
  */
 public inline fun DrawContext.withCanvas(block: Canvas.() -> Unit) {
     canvas.block()
 }
 
 /**
- * Creates an anonymous implementation of [DrawContext].
+ * Creates an anonymous implementation of [CartesianDrawContext].
  *
  * @param canvas the canvas to draw the chart on.
  * @param density the pixel density of the screen (used in pixel size calculation).
  * @param fontScale the scale of fonts.
  * @param isLtr whether the device layout is left-to-right.
- * @param elevationOverlayColor the elevation overlay color. This is applied to components that cast shadows.
  */
 public fun drawContext(
     canvas: Canvas,
@@ -46,16 +45,14 @@ public fun drawContext(
     fontScale: Float = 1f,
     isLtr: Boolean = true,
     elevationOverlayColor: Long = DefaultColors.Light.elevationOverlayColor,
+    canvasBounds: RectF = RectF(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat()),
 ): DrawContext = object : DrawContext, Extras by DefaultExtras() {
-    override val canvasBounds: RectF = RectF(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat())
+    override val canvasBounds: RectF = canvasBounds
     override val elevationOverlayColor: Long = elevationOverlayColor
     override var canvas: Canvas = canvas
     override val density: Float = density
     override val fontScale: Float = fontScale
     override val isLtr: Boolean = isLtr
-    override val isHorizontalScrollEnabled: Boolean = false
-    override val chartScale: Float = 1f
-    override val chartValuesManager: ChartValuesManager = ChartValuesManager()
 
     override fun withOtherCanvas(canvas: Canvas, block: (DrawContext) -> Unit) {
         val originalCanvas = this.canvas
@@ -65,7 +62,6 @@ public fun drawContext(
     }
 
     override fun reset() {
-        chartValuesManager.resetChartValues()
         clearExtras()
     }
 }

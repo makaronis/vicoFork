@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 by Patryk Goworowski and Patrick Michalik.
+ * Copyright 2023 by Patryk Goworowski and Patrick Michalik.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import com.patrykandpatrick.vico.core.Animation
 import com.patrykandpatrick.vico.core.chart.composed.ComposedChartEntryModel
 import com.patrykandpatrick.vico.core.entry.ChartEntryModel
 import com.patrykandpatrick.vico.core.entry.ChartModelProducer
-import com.patrykandpatrick.vico.core.entry.EntryModel
 import com.patrykandpatrick.vico.core.entry.composed.ComposedChartEntryModelProducer
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -67,7 +66,7 @@ public fun <Model : ChartEntryModel> ChartModelProducer<Model>.collect(
  * @see ChartModelProducer
  */
 @Composable
-public fun <Model : EntryModel<*>> ChartModelProducer<Model>.collectAsState(
+public fun <Model> ChartModelProducer<Model>.collectAsState(
     chartKey: Any,
     producerKey: Any,
     animationSpec: AnimationSpec<Float>? = defaultDiffAnimationSpec,
@@ -111,9 +110,8 @@ public fun <Model : EntryModel<*>> ChartModelProducer<Model>.collectAsState(
 }
 
 /**
- * Creates a [ComposedChartEntryModel] instance with two [ChartEntryModel]s.
- *
- * @param other the [ChartEntryModel] that will be composed with the receiver [ChartEntryModel].
+ * Combines two [ChartEntryModel] implementations—the receiver and [other]—into a [ComposedChartEntryModel].
  */
+@Deprecated("Use `com.patrykandpatrick.vico.core.entry.composed.plus` instead.")
 public operator fun <Model : ChartEntryModel> Model.plus(other: Model): ComposedChartEntryModel<Model> =
     ComposedChartEntryModelProducer.composedChartEntryModelOf(listOf(this, other))

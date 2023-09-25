@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 by Patryk Goworowski and Patrick Michalik.
+ * Copyright 2023 by Patryk Goworowski and Patrick Michalik.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.patrykandpatrick.vico.compose.chart.Chart
+import com.patrykandpatrick.vico.compose.chart.CartesianChartHost
 import com.patrykandpatrick.vico.compose.component.shape.shader.fromBrush
 import com.patrykandpatrick.vico.compose.style.currentChartStyle
 import com.patrykandpatrick.vico.core.DefaultAlpha
@@ -57,19 +57,17 @@ import com.patrykandpatrick.vico.core.marker.Marker
  * are lines.
  * @param decorations the list of [Decoration]s that will be added to the [LineChart].
  * @param persistentMarkers maps x-axis values to persistent [Marker]s.
- * @param pointPosition the horizontal position of each point in its corresponding segment.
  * @param axisValuesOverrider overrides the minimum and maximum x-axis and y-axis values.
  * @param targetVerticalAxisPosition if this is set, any [AxisRenderer] with an [AxisPosition] equal to the provided
  * value will use the [ChartValues] provided by this chart. This is meant to be used with [ComposedChart].
  *
- * @see Chart
+ * @see CartesianChartHost
  * @see ColumnChart
  */
 @Composable
 public fun lineChart(
     lines: List<LineSpec> = currentChartStyle.lineChart.lines,
     spacing: Dp = currentChartStyle.lineChart.spacing,
-    pointPosition: LineChart.PointPosition = LineChart.PointPosition.Center,
     decorations: List<Decoration>? = null,
     persistentMarkers: Map<Float, Marker>? = null,
     axisValuesOverrider: AxisValuesOverrider<ChartEntryModel>? = null,
@@ -77,7 +75,6 @@ public fun lineChart(
 ): LineChart = remember { LineChart() }.apply {
     this.lines = lines
     this.spacingDp = spacing.value
-    this.pointPosition = pointPosition
     this.axisValuesOverrider = axisValuesOverrider
     this.targetVerticalAxisPosition = targetVerticalAxisPosition
     decorations?.also(::setDecorations)
@@ -97,13 +94,12 @@ public fun lineChart(
  * @param persistentMarkers maps x-axis values to persistent [Marker]s.
  * @param targetVerticalAxisPosition if this is set, any [AxisRenderer] with an [AxisPosition] equal to the provided
  * value will use the [ChartValues] provided by this chart. This is meant to be used with [ComposedChart].
- * @param pointPosition the horizontal position of each point in its corresponding segment.
  *
- * @see Chart
+ * @see CartesianChartHost
  * @see ColumnChart
  */
-@Deprecated(message = "Axis values should be overridden via `AxisValuesOverrider`.")
-@Suppress("DEPRECATION")
+@Deprecated(message = "Axis values should be overridden via `AxisValuesOverrider`.", level = DeprecationLevel.ERROR)
+@Suppress("DEPRECATION_ERROR")
 @Composable
 public fun lineChart(
     lines: List<LineSpec> = currentChartStyle.lineChart.lines,
@@ -115,7 +111,6 @@ public fun lineChart(
     decorations: List<Decoration>? = null,
     persistentMarkers: Map<Float, Marker>? = null,
     targetVerticalAxisPosition: AxisPosition.Vertical? = null,
-    pointPosition: LineChart.PointPosition = LineChart.PointPosition.Center,
 ): LineChart = remember { LineChart() }.apply {
     this.lines = lines
     this.spacingDp = spacing.value
@@ -124,7 +119,6 @@ public fun lineChart(
     this.minY = minY
     this.maxY = maxY
     this.targetVerticalAxisPosition = targetVerticalAxisPosition
-    this.pointPosition = pointPosition
     decorations?.also(::setDecorations)
     persistentMarkers?.also(::setPersistentMarkers)
 }
@@ -214,11 +208,11 @@ public fun lineSpec(
                 dataLabelVerticalPosition = dataLabelVerticalPosition,
                 dataLabelValueFormatter = dataLabelValueFormatter,
                 dataLabelRotationDegrees = dataLabelRotationDegrees,
-                pointPosition = pointPosition,
                 pointConnector = DefaultPointConnector(cubicStrength = cubicStrength),
             )""",
         imports = arrayOf("com.patrykandpatrick.vico.core.chart.DefaultPointConnector"),
     ),
+    level = DeprecationLevel.ERROR,
 )
 public fun lineSpec(
     lineColor: Color,

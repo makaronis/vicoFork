@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 by Patryk Goworowski and Patrick Michalik.
+ * Copyright 2023 by Patryk Goworowski and Patrick Michalik.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 package com.patrykandpatrick.vico.core.context
 
 import android.graphics.RectF
-import com.patrykandpatrick.vico.core.chart.Chart
-import com.patrykandpatrick.vico.core.chart.values.ChartValues
 import com.patrykandpatrick.vico.core.chart.values.ChartValuesManager
 
 /**
@@ -30,13 +28,6 @@ public interface MeasureContext : Extras {
      * The bounds of the canvas that will be used to draw the chart and its components.
      */
     public val canvasBounds: RectF
-
-    /**
-     * Manages the associated [Chart]’s [ChartValues].
-     *
-     * @see [ChartValuesManager]
-     */
-    public val chartValuesManager: ChartValuesManager
 
     /**
      * The pixel density.
@@ -52,16 +43,6 @@ public interface MeasureContext : Extras {
      * Whether the layout direction is left-to-right.
      */
     public val isLtr: Boolean
-
-    /**
-     * Whether horizontal scrolling is enabled.
-     */
-    public val isHorizontalScrollEnabled: Boolean
-
-    /**
-     * The scale of the chart. Used to handle zooming in and out.
-     */
-    public val chartScale: Float
 
     /**
      * A multiplier used to ensure support for both left-to-right and right-to-left layouts. Values such as translation

@@ -23,7 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import com.patrykandpatrick.vico.compose.chart.Chart
+import com.patrykandpatrick.vico.compose.chart.CartesianChartHost
 import com.patrykandpatrick.vico.core.extension.rangeWith
 import com.patrykandpatrick.vico.core.scroll.InitialScroll
 import com.patrykandpatrick.vico.core.scroll.ScrollListener
@@ -31,7 +31,7 @@ import com.patrykandpatrick.vico.core.scroll.ScrollListenerHost
 import kotlin.math.abs
 
 /**
- * Houses information on a [Chart]’s scroll state. Allows for programmatic scrolling.
+ * Houses information on a [CartesianChartHost]’s scroll state. Allows for programmatic scrolling.
  */
 public class ChartScrollState : ScrollableState, ScrollListenerHost {
 
@@ -45,7 +45,7 @@ public class ChartScrollState : ScrollableState, ScrollListenerHost {
      */
     public var value: Float
         get() = _value.value
-        internal set(newValue) {
+        private set(newValue) {
             val oldValue = value
             _value.value = newValue
             scrollListeners.forEach { scrollListener -> scrollListener.onValueChanged(oldValue, newValue) }
@@ -68,6 +68,10 @@ public class ChartScrollState : ScrollableState, ScrollListenerHost {
         val limitedValue = unlimitedValue.coerceIn(0f.rangeWith(maxValue))
         val consumedValue = limitedValue - value
         value += consumedValue
+
+        val unconsumedScroll = delta - consumedValue
+        if (unconsumedScroll != 0f) notifyUnconsumedScroll(unconsumedScroll)
+
         if (unlimitedValue != limitedValue) consumedValue else delta
     }
 
@@ -99,6 +103,10 @@ public class ChartScrollState : ScrollableState, ScrollListenerHost {
             InitialScroll.End -> maxValue
         }
         initialScrollHandled = true
+    }
+
+    private fun notifyUnconsumedScroll(delta: Float) {
+        scrollListeners.forEach { scrollListener -> scrollListener.onScrollNotConsumed(delta) }
     }
 }
 

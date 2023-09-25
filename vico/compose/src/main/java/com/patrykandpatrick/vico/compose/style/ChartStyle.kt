@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 by Patryk Goworowski and Patrick Michalik.
+ * Copyright 2023 by Patryk Goworowski and Patrick Michalik.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.patrykandpatrick.vico.compose.chart.pie.slice.slice
 import com.patrykandpatrick.vico.compose.component.shape.dashedShape
 import com.patrykandpatrick.vico.compose.component.shape.shader.fromBrush
 import com.patrykandpatrick.vico.core.DefaultAlpha
@@ -41,6 +42,10 @@ import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
 import com.patrykandpatrick.vico.core.axis.formatter.DecimalFormatAxisValueFormatter
 import com.patrykandpatrick.vico.core.chart.column.ColumnChart.MergeMode
 import com.patrykandpatrick.vico.core.chart.line.LineChart.LineSpec
+import com.patrykandpatrick.vico.core.chart.pie.Size
+import com.patrykandpatrick.vico.core.chart.pie.label.InsideSliceLabel
+import com.patrykandpatrick.vico.core.chart.pie.label.SliceLabel
+import com.patrykandpatrick.vico.core.chart.pie.slice.Slice
 import com.patrykandpatrick.vico.core.component.shape.LineComponent
 import com.patrykandpatrick.vico.core.component.shape.Shape
 import com.patrykandpatrick.vico.core.component.shape.ShapeComponent
@@ -48,6 +53,7 @@ import com.patrykandpatrick.vico.core.component.shape.Shapes
 import com.patrykandpatrick.vico.core.component.shape.shader.DynamicShaders
 import com.patrykandpatrick.vico.core.component.text.TextComponent
 import com.patrykandpatrick.vico.core.component.text.VerticalPosition
+import com.patrykandpatrick.vico.core.component.text.textComponent
 import com.patrykandpatrick.vico.core.formatter.DecimalFormatValueFormatter
 import com.patrykandpatrick.vico.core.formatter.ValueFormatter
 
@@ -59,6 +65,7 @@ import com.patrykandpatrick.vico.core.formatter.ValueFormatter
  * @property lineChart the appearance of line charts.
  * @property marker the appearance of chart markers.
  * @property elevationOverlayColor the color used for elevation overlays.
+ * @property pieChart the appearance of pie charts.
  */
 public data class ChartStyle(
     val axis: Axis,
@@ -66,6 +73,7 @@ public data class ChartStyle(
     val lineChart: LineChart,
     val marker: Marker,
     val elevationOverlayColor: Color,
+    val pieChart: PieChart,
 ) {
     /**
      * Defines the appearance of chart axes.
@@ -128,10 +136,10 @@ public data class ChartStyle(
      * Defines the appearance of column charts.
      *
      * @property columns the [LineComponent] instances to use for columns. This list is iterated through as many times
-     * as necessary for each chart segment. If the list contains a single element, all columns have the same appearance.
-     * @property outsideSpacing the horizontal padding between the edges of chart segments and the columns they contain.
-     * @property innerSpacing the spacing between the columns contained in chart segments. This has no effect on
-     * segments that contain a single column only.
+     * as necessary for each column collection. If the list contains a single element, all columns have the same
+     * appearance.
+     * @property outsideSpacing the distance between neighboring column collections.
+     * @property innerSpacing the distance between neighboring grouped columns.
      * @property mergeMode defines the way multiple columns are rendered in [ColumnChart]s.
      * @property dataLabel an optional [TextComponent] to use for data labels.
      * @property dataLabelVerticalPosition the vertical position of data labels relative to the top of their
@@ -176,12 +184,30 @@ public data class ChartStyle(
         val verticalPadding: Dp = DefaultDimens.MARKER_VERTICAL_PADDING.dp,
     )
 
+    /**
+     * Defines the appearance of pie charts.
+     *
+     * @property slices the [Slice]s to use for the pie chart.
+     * @property spacing the spacing between slices.
+     * @property outerSize the size of the pie chart.
+     * @property innerSize the size of the hole in the middle of the pie chart.
+     * @property startAngle the angle at which the first slice starts.
+     * @property sliceLabel the [SliceLabel] used as a default label style in [slice] function.
+     */
+    public data class PieChart(
+        val slices: List<Slice>,
+        val spacing: Dp = DefaultDimens.PIE_CHART_SPACING.dp,
+        val outerSize: Size.OuterSize = Size.OuterSize.fill(),
+        val innerSize: Size.InnerSize = Size.InnerSize.zero(),
+        val startAngle: Float = DefaultDimens.PIE_CHART_START_ANGLE,
+        val sliceLabel: SliceLabel = InsideSliceLabel(textComponent = textComponent()),
+    )
+
     public companion object {
 
         /**
          * Creates a base implementation of [ChartStyle] using the provided colors.
          */
-        @Suppress("LongParameterList")
         public fun fromColors(
             axisLabelColor: Color,
             axisGuidelineColor: Color,
@@ -220,6 +246,13 @@ public data class ChartStyle(
             ),
             marker = Marker(),
             elevationOverlayColor = elevationOverlayColor,
+            pieChart = PieChart(
+                slices = entityColors.map { entityColor ->
+                    Slice(
+                        color = entityColor.toArgb(),
+                    )
+                },
+            ),
         )
 
         internal fun fromDefaultColors(defaultColors: DefaultColors) = fromColors(
