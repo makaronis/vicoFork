@@ -18,6 +18,7 @@ package com.patrykandpatrick.vico.core.chart.values
 
 import com.patrykandpatrick.vico.core.chart.layer.CartesianLayer
 import com.patrykandpatrick.vico.core.extension.round
+import com.patrykandpatrick.vico.core.model.CandlestickCartesianLayerModel
 import com.patrykandpatrick.vico.core.model.CartesianLayerModel
 import kotlin.math.abs
 
@@ -30,28 +31,28 @@ public interface AxisValueOverrider<T> {
      *
      * @param model holds data about the chart’s entries, which can be used to calculate the new minimum x-axis value.
      */
-    public fun getMinX(model: T): Float? = null
+    public fun getMinX(model: T, firstInx: Int? = null, lastInx: Int? = null): Float? = null
 
     /**
      * The maximum value shown on the x-axis. If `null` is returned, the chart will fall back to the default value.
      *
      * @param model holds data about the chart’s entries, which can be used to calculate the new maximum x-axis value.
      */
-    public fun getMaxX(model: T): Float? = null
+    public fun getMaxX(model: T, firstInx: Int? = null, lastInx: Int? = null): Float? = null
 
     /**
      * The minimum value shown on the y-axis. If `null` is returned, the chart will fall back to the default value.
      *
      * @param model holds data about the chart’s entries, which can be used to calculate the new minimum y-axis value.
      */
-    public fun getMinY(model: T): Float? = null
+    public fun getMinY(model: T, firstInx: Int? = null, lastInx: Int? = null): Float? = null
 
     /**
      * The maximum value shown on the y-axis. If `null` is returned, the chart will fall back to the default value.
      *
      * @param model holds data about the chart’s entries, which can be used to calculate the new maximum y-axis value.
      */
-    public fun getMaxY(model: T): Float? = null
+    public fun getMaxY(model: T, firstInx: Int? = null, lastInx: Int? = null): Float? = null
 
     public companion object {
         /**
@@ -65,13 +66,13 @@ public interface AxisValueOverrider<T> {
             maxY: Float? = null,
         ): AxisValueOverrider<T> =
             object : AxisValueOverrider<T> {
-                override fun getMinX(model: T): Float? = minX
+                override fun getMinX(model: T, firstInx: Int?, lastInx: Int?): Float? = minX
 
-                override fun getMaxX(model: T): Float? = maxX
+                override fun getMaxX(model: T, firstInx: Int?, lastInx: Int?): Float? = maxX
 
-                override fun getMinY(model: T): Float? = minY
+                override fun getMinY(model: T, firstInx: Int?, lastInx: Int?): Float? = minY
 
-                override fun getMaxY(model: T): Float? = maxY
+                override fun getMaxY(model: T, firstInx: Int?, lastInx: Int?): Float? = maxY
             }
 
         /**
@@ -89,14 +90,38 @@ public interface AxisValueOverrider<T> {
                     require(yFraction > 0f)
                 }
 
-                override fun getMinY(model: T): Float {
+                override fun getMinY(model: T, firstInx: Int?, lastInx: Int?): Float {
                     val difference = abs(getMaxY(model) - model.maxY)
                     return (model.minY - difference).maybeRound().coerceAtLeast(0f)
                 }
 
-                override fun getMaxY(model: T): Float = (model.maxY * yFraction).maybeRound()
+                override fun getMaxY(model: T, firstInx: Int?, lastInx: Int?): Float =
+                    (model.maxY * yFraction).maybeRound()
 
                 private fun Float.maybeRound() = if (round) this.round else this
+            }
+
+
+        public fun autoYScale(): AxisValueOverrider<CandlestickCartesianLayerModel> =
+            object : AxisValueOverrider<CandlestickCartesianLayerModel> {
+
+                override fun getMinY(model: CandlestickCartesianLayerModel, firstInx: Int?, lastInx: Int?): Float? {
+                    return try {
+                        val visibleData = model.series.subList(firstInx!!, lastInx!!)
+                        visibleData.minOf { it.low }
+                    } catch (e: Exception) {
+                        super.getMinY(model, firstInx, lastInx)
+                    }
+                }
+
+                override fun getMaxY(model: CandlestickCartesianLayerModel, firstInx: Int?, lastInx: Int?): Float? {
+                    return try {
+                        val visibleData = model.series.subList(firstInx!!, lastInx!!)
+                        visibleData.maxOf { it.high }
+                    } catch (e: Exception) {
+                        super.getMaxY(model, firstInx, lastInx)
+                    }
+                }
             }
     }
 }

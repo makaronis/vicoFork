@@ -22,7 +22,9 @@ import com.patrykandpatrick.vico.core.axis.AxisPosition
 import com.patrykandpatrick.vico.core.axis.vertical.VerticalAxis
 import com.patrykandpatrick.vico.core.chart.dimensions.MutableHorizontalDimensions
 import com.patrykandpatrick.vico.core.chart.draw.CartesianChartDrawContext
+import com.patrykandpatrick.vico.core.chart.draw.getMaxScrollDistance
 import com.patrykandpatrick.vico.core.chart.layout.HorizontalLayout
+import com.patrykandpatrick.vico.core.chart.values.AxisValueOverrider
 import com.patrykandpatrick.vico.core.chart.values.ChartValues
 import com.patrykandpatrick.vico.core.chart.values.MutableChartValues
 import com.patrykandpatrick.vico.core.component.shape.LineComponent
@@ -36,12 +38,14 @@ import com.patrykandpatrick.vico.core.model.CandlestickCartesianLayerModel
 import com.patrykandpatrick.vico.core.model.CandlestickCartesianLayerModel.TypedEntry.Type
 import com.patrykandpatrick.vico.core.model.CandlestickCartesianLayerModel.TypedEntry.Type.Change
 import com.patrykandpatrick.vico.core.model.ExtraStore
+import com.patrykandpatrick.vico.core.model.LineCartesianLayerModel
 import com.patrykandpatrick.vico.core.model.MutableExtraStore
 import com.patrykandpatrick.vico.core.model.drawing.CandlestickCartesianLayerDrawingModel
 import com.patrykandpatrick.vico.core.model.drawing.DefaultDrawingModelInterpolator
 import com.patrykandpatrick.vico.core.model.drawing.DrawingModelInterpolator
 import com.patrykandpatrick.vico.core.model.forEachInIndexed
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 /**
  * [CandlestickCartesianLayer] displays data as vertical bars. It can draw multiple columns per segment.
@@ -56,6 +60,7 @@ import kotlin.math.abs
 public open class CandlestickCartesianLayer(
     public var config: Config,
     public var minRealBodyHeightDp: Float = DefaultDimens.REAL_BODY_MIN_HEIGHT_DP,
+    axisValueOverrider: AxisValueOverrider<LineCartesianLayerModel>? = null,
     public var spacingDp: Float = DefaultDimens.CANDLESTICK_CHART_DEFAULT_SPACING_DP,
     public var verticalAxisPosition: AxisPosition.Vertical? = null,
     public var drawingModelInterpolator: DrawingModelInterpolator<
@@ -99,6 +104,25 @@ public open class CandlestickCartesianLayer(
 
     override val entryLocationMap: HashMap<Float, MutableList<Marker.EntryModel>> = HashMap()
 
+    private fun getFirstAndLastVisibleIndex(
+        itemsCount: Int,
+        horizontalScroll: Float,
+        maxScroll: Float,
+    ): Pair<Int, Int> {
+
+        val oneSegmentWidth =  horizontalDimensions.getContentWidth(1)
+        val viewportWidth = bounds.width()
+        val scrollPercent = (horizontalScroll / (maxScroll / 100.0f)).roundToInt() / 100.0f
+
+        val visibleItems: Int = (viewportWidth / oneSegmentWidth).roundToInt()
+        val firstVisibleIndex = ((scrollPercent * (itemsCount - visibleItems)).toInt()).coerceIn(0, itemsCount - 1)
+        val lastVisibleIndex = (firstVisibleIndex + visibleItems).coerceIn(0, itemsCount - 1)
+        return firstVisibleIndex to lastVisibleIndex
+    }
+
+    private var firstVisibleInx: Int = -1
+    private var lastVisibleInx: Int = -1
+
     override fun drawInternal(
         context: CartesianChartDrawContext,
         model: CandlestickCartesianLayerModel,
@@ -120,6 +144,14 @@ public open class CandlestickCartesianLayer(
         val yRange = chartValues.getYRange(verticalAxisPosition)
         val heightMultiplier = bounds.height() / yRange.length
 
+        val (firstInx, lastInx) = getFirstAndLastVisibleIndex(
+            model.series.size,
+            horizontalScroll,
+            getMaxScrollDistance(),
+        )
+
+        firstVisibleInx = firstInx
+        lastVisibleInx = lastInx
         val drawingStart: Float =
             bounds.getStart(isLtr = isLtr) + (
                 horizontalDimensions.startPadding -
@@ -221,10 +253,10 @@ public open class CandlestickCartesianLayer(
     ) {
         chartValues.tryUpdate(
             axisPosition = verticalAxisPosition,
-            minX = axisValueOverrider?.getMinX(model) ?: model.minX,
-            maxX = axisValueOverrider?.getMaxX(model) ?: model.maxX,
-            minY = axisValueOverrider?.getMinY(model) ?: model.minY,
-            maxY = axisValueOverrider?.getMaxY(model) ?: model.maxY,
+            minX = axisValueOverrider?.getMinX(model,firstVisibleInx,lastVisibleInx) ?: model.minX,
+            maxX = axisValueOverrider?.getMaxX(model,firstVisibleInx,lastVisibleInx) ?: model.maxX,
+            minY = axisValueOverrider?.getMinY(model,firstVisibleInx,lastVisibleInx) ?: model.minY,
+            maxY = axisValueOverrider?.getMaxY(model,firstVisibleInx,lastVisibleInx) ?: model.maxY,
         )
     }
 
