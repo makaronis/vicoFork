@@ -69,8 +69,8 @@ public class MutableChartValues : ChartValues {
         maxY: Float,
         axisPosition: AxisPosition.Vertical?,
     ) {
-        _minX = _minX?.coerceAtMost(minX) ?: minX
-        _maxX = _maxX?.coerceAtLeast(maxX) ?: maxX
+        _minX =  minX
+        _maxX = maxX
         yRanges[null]?.tryUpdate(minY, maxY) ?: run { yRanges[null] = MutableYRange(minY, maxY) }
         if (axisPosition != null) {
             yRanges[axisPosition]?.tryUpdate(minY, maxY) ?: run { yRanges[axisPosition] = MutableYRange(minY, maxY) }
@@ -102,8 +102,8 @@ public class MutableChartValues : ChartValues {
             minY: Float,
             maxY: Float,
         ) {
-            this.minY = min(this.minY, minY)
-            this.maxY = max(this.maxY, maxY)
+            this.minY = minY
+            this.maxY = maxY
         }
     }
 }

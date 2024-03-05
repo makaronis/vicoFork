@@ -145,7 +145,7 @@ public fun CartesianChartModelProducer.collectAsState(
                     mutableChartValues.reset()
                     if (model != null) {
                         chart.updateChartValues(mutableChartValues, model, getXStep?.invoke(model))
-                        mutableChartValues.toImmutable()
+                        mutableChartValues
                     } else {
                         ChartValues.Empty
                     }

@@ -46,7 +46,7 @@ internal class ShowcaseViewModel : ViewModel() {
 
     init {
         viewModelScope.launch(Dispatchers.Default) {
-            while (currentCoroutineContext().isActive) {
+//            while (currentCoroutineContext().isActive) {
                 val singleSeriesLineLayerModelPartial =
                     RandomCartesianModelGenerator.getRandomLineLayerModelPartial()
                 val tripleSeriesColumnLayerModelPartial =
@@ -73,7 +73,7 @@ internal class ShowcaseViewModel : ViewModel() {
                     set(RandomPieModelGenerator.getRandomPartial())
                 }
                 delay(UPDATE_FREQUENCY)
-            }
+//            }
         }
     }
 

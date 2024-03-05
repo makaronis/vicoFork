@@ -17,6 +17,7 @@
 package com.patrykandpatrick.vico.core.chart.layer
 
 import android.graphics.Color
+import android.util.Log
 import com.patrykandpatrick.vico.core.DefaultDimens
 import com.patrykandpatrick.vico.core.axis.AxisPosition
 import com.patrykandpatrick.vico.core.axis.vertical.VerticalAxis
@@ -43,7 +44,6 @@ import com.patrykandpatrick.vico.core.model.MutableExtraStore
 import com.patrykandpatrick.vico.core.model.drawing.CandlestickCartesianLayerDrawingModel
 import com.patrykandpatrick.vico.core.model.drawing.DefaultDrawingModelInterpolator
 import com.patrykandpatrick.vico.core.model.drawing.DrawingModelInterpolator
-import com.patrykandpatrick.vico.core.model.forEachInIndexed
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -104,19 +104,23 @@ public open class CandlestickCartesianLayer(
 
     override val entryLocationMap: HashMap<Float, MutableList<Marker.EntryModel>> = HashMap()
 
-    private fun getFirstAndLastVisibleIndex(
+    private fun CartesianChartDrawContext.getFirstAndLastVisibleIndex(
         itemsCount: Int,
         horizontalScroll: Float,
         maxScroll: Float,
     ): Pair<Int, Int> {
-
-        val oneSegmentWidth =  horizontalDimensions.getContentWidth(1)
+        val oneSegmentWidth = config.maxThicknessDp.pixels + spacingDp.pixels
         val viewportWidth = bounds.width()
         val scrollPercent = (horizontalScroll / (maxScroll / 100.0f)).roundToInt() / 100.0f
 
         val visibleItems: Int = (viewportWidth / oneSegmentWidth).roundToInt()
-        val firstVisibleIndex = ((scrollPercent * (itemsCount - visibleItems)).toInt()).coerceIn(0, itemsCount - 1)
-        val lastVisibleIndex = (firstVisibleIndex + visibleItems).coerceIn(0, itemsCount - 1)
+        val firstVisibleIndex = ((scrollPercent * (itemsCount - visibleItems)).toInt() - 2).coerceIn(0, itemsCount)
+        val lastVisibleIndex = (firstVisibleIndex + visibleItems + 3).coerceIn(0, itemsCount - 1)
+        Log.v(
+            "aa",
+            "firstVisibleIndex=$firstVisibleIndex, lastVisibleIndex=$lastVisibleIndex visibleItems=$visibleItems itemsCount=$itemsCount",
+        )
+        Log.v("aa", "maxScroll=$maxScroll, horizontalScroll=$horizontalScroll percent=$scrollPercent")
         return firstVisibleIndex to lastVisibleIndex
     }
 
@@ -143,20 +147,23 @@ public open class CandlestickCartesianLayer(
     ) {
         val yRange = chartValues.getYRange(verticalAxisPosition)
         val heightMultiplier = bounds.height() / yRange.length
-
+        Log.v("aa", "drawChartInternal")
         val (firstInx, lastInx) = getFirstAndLastVisibleIndex(
             model.series.size,
             horizontalScroll,
             getMaxScrollDistance(),
         )
+        Log.v("aa", "count=${lastInx - firstInx}")
 
         firstVisibleInx = firstInx
         lastVisibleInx = lastInx
+        updateChartValues(chartValues as MutableChartValues, model)
+
         val drawingStart: Float =
             bounds.getStart(isLtr = isLtr) + (
                 horizontalDimensions.startPadding -
                     config.maxThicknessDp.half.pixels * zoom
-            ) * layoutDirectionMultiplier - horizontalScroll
+                ) * layoutDirectionMultiplier - horizontalScroll
 
         var bodyCenterX: Float
         var candle: Candle
@@ -170,7 +177,7 @@ public open class CandlestickCartesianLayer(
         val zeroLinePosition = (bounds.bottom + zeroLineYFraction * bounds.height()).round
         val minRealBodyHeight = minRealBodyHeightDp.pixels
 
-        model.series.forEachInIndexed(range = chartValues.minX..chartValues.maxX) { index, entry, _ ->
+        model.series.forEachIndexed { index, entry ->
             candle = config.getCandle(entry.type)
             val candleInfo = drawingModel?.entries?.get(entry.x)
 
@@ -253,10 +260,10 @@ public open class CandlestickCartesianLayer(
     ) {
         chartValues.tryUpdate(
             axisPosition = verticalAxisPosition,
-            minX = axisValueOverrider?.getMinX(model,firstVisibleInx,lastVisibleInx) ?: model.minX,
-            maxX = axisValueOverrider?.getMaxX(model,firstVisibleInx,lastVisibleInx) ?: model.maxX,
-            minY = axisValueOverrider?.getMinY(model,firstVisibleInx,lastVisibleInx) ?: model.minY,
-            maxY = axisValueOverrider?.getMaxY(model,firstVisibleInx,lastVisibleInx) ?: model.maxY,
+            minX = axisValueOverrider?.getMinX(model, firstVisibleInx, lastVisibleInx) ?: model.minX,
+            maxX = axisValueOverrider?.getMaxX(model, firstVisibleInx, lastVisibleInx) ?: model.maxX,
+            minY = axisValueOverrider?.getMinY(model, firstVisibleInx, lastVisibleInx) ?: model.minY,
+            maxY = axisValueOverrider?.getMaxY(model, firstVisibleInx, lastVisibleInx) ?: model.maxY,
         )
     }
 
@@ -281,8 +288,8 @@ public open class CandlestickCartesianLayer(
                     horizontalDimensions.ensureValuesAtLeast(
                         xSpacing = xSpacing,
                         scalableStartPadding =
-                            columnCollectionWidth.half +
-                                horizontalLayout.scalableStartPaddingDp.pixels,
+                        columnCollectionWidth.half +
+                            horizontalLayout.scalableStartPaddingDp.pixels,
                         scalableEndPadding = columnCollectionWidth.half + horizontalLayout.scalableEndPaddingDp.pixels,
                         unscalableStartPadding = horizontalLayout.unscalableStartPaddingDp.pixels,
                         unscalableEndPadding = horizontalLayout.unscalableEndPaddingDp.pixels,

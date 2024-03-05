@@ -17,6 +17,7 @@
 package com.patrykandpatrick.vico.sample.showcase.charts
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.viewinterop.AndroidViewBinding
 import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
@@ -26,6 +27,7 @@ import com.patrykandpatrick.vico.compose.chart.layer.rememberCandlestickCartesia
 import com.patrykandpatrick.vico.compose.chart.rememberCartesianChart
 import com.patrykandpatrick.vico.compose.style.ProvideChartStyle
 import com.patrykandpatrick.vico.core.axis.Axis
+import com.patrykandpatrick.vico.core.chart.values.AxisValueOverrider
 import com.patrykandpatrick.vico.core.model.CartesianChartModelProducer
 import com.patrykandpatrick.vico.databinding.Chart10Binding
 import com.patrykandpatrick.vico.sample.showcase.UISystem
@@ -46,11 +48,12 @@ internal fun Chart10(
 @Composable
 private fun ComposeChart10(modelProducer: CartesianChartModelProducer) {
     val marker = rememberMarker()
+    val axisValueOverrider = remember{ AxisValueOverrider.autoYScale()}
     ProvideChartStyle(rememberChartStyle(chartColors)) {
         CartesianChartHost(
             chart =
                 rememberCartesianChart(
-                    rememberCandlestickCartesianLayer(),
+                    rememberCandlestickCartesianLayer(axisValueOverrider = axisValueOverrider),
                     startAxis = rememberStartAxis(),
                     bottomAxis = rememberBottomAxis(guideline = null),
                 ),

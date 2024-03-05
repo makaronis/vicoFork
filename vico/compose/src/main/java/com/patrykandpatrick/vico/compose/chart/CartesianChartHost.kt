@@ -183,7 +183,7 @@ public fun CartesianChartHost(
     getXStep: ((CartesianChartModel) -> Float)? = null,
 ) {
     val chartValues = remember(chart) { MutableChartValues() }
-    remember(chartValues, model, getXStep) {
+    remember(chartValues, model, getXStep,chartScrollState.value) {
         chartValues.reset()
         chart.updateChartValues(chartValues, model, getXStep?.invoke(model))
     }
@@ -204,7 +204,7 @@ public fun CartesianChartHost(
             autoScaleUp = autoScaleUp,
             chartScrollState = chartScrollState,
             horizontalLayout = horizontalLayout,
-            chartValues = chartValues.toImmutable(),
+            chartValues = chartValues,
         )
     }
 }

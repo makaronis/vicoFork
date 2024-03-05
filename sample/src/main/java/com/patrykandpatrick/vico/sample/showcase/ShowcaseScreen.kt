@@ -94,17 +94,17 @@ private fun LazyListScope.chartItems(
     uiSystem: UISystem,
     viewModel: ShowcaseViewModel,
 ) {
-    cardItem { Chart1(uiSystem, viewModel.modelProducer1) }
-    cardItem { Chart2(uiSystem, viewModel.modelProducer2) }
-    cardItem { Chart3(uiSystem, viewModel.modelProducer1) }
-    cardItem { Chart4(uiSystem, viewModel.modelProducer3) }
-    cardItem { Chart5(uiSystem, viewModel.modelProducer4) }
-    cardItem { Chart6(uiSystem, viewModel.modelProducer4) }
-    cardItem { Chart7(uiSystem, viewModel.modelProducer5) }
-    cardItem { Chart8(uiSystem, viewModel.modelProducer3) }
-    cardItem { Chart9(uiSystem, viewModel.modelProducer6) }
+//    cardItem { Chart1(uiSystem, viewModel.modelProducer1) }
+//    cardItem { Chart2(uiSystem, viewModel.modelProducer2) }
+//    cardItem { Chart3(uiSystem, viewModel.modelProducer1) }
+//    cardItem { Chart4(uiSystem, viewModel.modelProducer3) }
+//    cardItem { Chart5(uiSystem, viewModel.modelProducer4) }
+//    cardItem { Chart6(uiSystem, viewModel.modelProducer4) }
+//    cardItem { Chart7(uiSystem, viewModel.modelProducer5) }
+//    cardItem { Chart8(uiSystem, viewModel.modelProducer3) }
+//    cardItem { Chart9(uiSystem, viewModel.modelProducer6) }
     cardItem { Chart10(uiSystem, viewModel.modelProducer10) }
-    cardItem { PieChart1(uiSystem, viewModel.pieModelProducer1) }
+//    cardItem { PieChart1(uiSystem, viewModel.pieModelProducer1) }
 }
 
 private fun LazyListScope.cardItem(content: @Composable () -> Unit) {
